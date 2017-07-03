@@ -12,4 +12,35 @@ pip3 install --user faice
 
 ## Usage
 
-TODO
+FAICE provides various tools via a common command line interface. The help commands `faice ${tool} -h`
+provide additional information about each tool.
+
+```bash
+# list available tools
+faice
+```
+
+```bash
+# parse experiment template to fill in undeclared variables
+faice parse -h
+```
+
+```bash
+# adapt an experiment to your own needs
+faice adapt -h
+```
+
+```bash
+# validate an experiment description with json schemas built into faice
+faice validate -h
+```
+
+```bash
+# generate a Vagrantfile to launch the specified execution engine in a virtual machine
+faice vagrant -h
+```
+
+```bash
+# run the specified experiment in an execution engine
+faice run -h
+```

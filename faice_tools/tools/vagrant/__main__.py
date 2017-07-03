@@ -1,5 +1,10 @@
+from argparse import ArgumentParser
+
+
 def main():
-    pass
+    parser = ArgumentParser(
+        description='generate a Vagrantfile to launch the specified execution engine in a virtual machine'
+    )
 
 if __name__ == '__main__':
     main()
