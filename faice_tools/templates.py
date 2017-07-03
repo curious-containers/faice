@@ -28,6 +28,6 @@ def fill_template(template, fillers):
     return t.render(fillers)
 
 
-def write_experiment_file(experiment, experiment_file):
+def write_experiment_file(d, experiment_file):
     with open(os.path.expanduser(experiment_file), 'w') as f:
-        json.dump(experiment, f, indent=4)
+        json.dump(d, f, indent=4)

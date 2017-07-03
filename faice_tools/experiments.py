@@ -1,8 +1,17 @@
+import sys
 import jsonschema
 
 from faice_tools.schemas import experiment_schema, experiment_schema_1
+from faice_tools.engines import get_engine
 
 
-def validate_experiment(e):
-    jsonschema.validate(e, experiment_schema)
-    jsonschema.validate(e['experiment'], experiment_schema_1)
+def validate_experiment(d):
+    jsonschema.validate(d, experiment_schema)
+    jsonschema.validate(d['experiment'], experiment_schema_1)
+    engine = get_engine(d)
+    validated = engine.validate_engine_config(d)
+    if not validated:
+        print('engine config schema could not be validated', file=sys.stderr)
+    validated = engine.validate_instructions(d)
+    if not validated:
+        print('instructions schema could not be validated', file=sys.stderr)

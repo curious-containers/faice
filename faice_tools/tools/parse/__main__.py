@@ -9,7 +9,9 @@ from faice_tools.templates import write_experiment_file
 
 
 def main():
-    parser = ArgumentParser(description='fill undeclared variables in an experiment template')
+    parser = ArgumentParser(
+        description='parse experiment template to fill in undeclared variables'
+    )
 
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument(
@@ -20,16 +22,17 @@ def main():
         '-f', '--template-file', dest='template_file', metavar='FILE',
         help='read experiment template from local FILE'
     )
+
     parser.add_argument(
         '-o', '--output-file', dest='output_file', metavar='FILE',
         help="""write resulting experiment to a FILE;
              experiment will be written to stdout, if no FILE is provided"""
     )
+
     parser.add_argument(
         '-n', '--non-interactive', dest='non_interactive', action='store_true',
-        help="""do not provide an interactive cli prompt to fill undeclared variables;
-        relies on a json document provided via stdin;
-        will fail, if variables are missing in document"""
+        help="""do not provide an interactive cli prompt to parse undeclared variables;
+        relies on a json document provided via stdin"""
     )
 
     args = parser.parse_args()
@@ -57,13 +60,13 @@ def main():
                 fillers[variable] = input("{}: ".format(variable))
             template = fill_template(template, fillers)
 
-    experiment = json.loads(template)
-    validate_experiment(experiment)
+    d = json.loads(template)
+    validate_experiment(d)
 
     if args.output_file:
-        write_experiment_file(experiment, args.output_file)
+        write_experiment_file(d, args.output_file)
     else:
-        print(json.dumps(experiment, indent=4))
+        print(json.dumps(d, indent=4))
 
 if __name__ == '__main__':
     main()

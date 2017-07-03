@@ -1,24 +1,30 @@
 import sys
+from collections import OrderedDict
 
-from faice_tools.tools.adapt.__main__ import main as ae_main
-from faice_tools.tools.fill.__main__ import main as ft_main
+from faice_tools.tools.adapt.__main__ import main as adapt_main
+from faice_tools.tools.parse.__main__ import main as parse_main
 from faice_tools.tools.run.__main__ import main as run_main
+from faice_tools.tools.validate.__main__ import main as validate_main
+from faice_tools.tools.vagrant.__main__ import main as vagrant_main
+
+
+TOOLS = OrderedDict([
+    ('parse', parse_main),
+    ('adapt', adapt_main),
+    ('validate', validate_main),
+    ('vagrant', vagrant_main),
+    ('run', run_main)
+])
 
 
 def main():
-    tools = {
-        'adapt': ae_main,
-        'fill': ft_main,
-        'run': run_main
-    }
-
-    if len(sys.argv) < 2 or sys.argv[1] not in tools:
+    if len(sys.argv) < 2 or sys.argv[1] not in TOOLS:
         print('usage:')
-        for key in tools:
+        for key in TOOLS:
             print(sys.argv[0], key)
         exit(1)
 
-    tool = tools[sys.argv[1]]
+    tool = TOOLS[sys.argv[1]]
     sys.argv[0] = '{} {}'.format(sys.argv[0], sys.argv[1])
     del sys.argv[1]
     tool()

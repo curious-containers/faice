@@ -34,6 +34,8 @@ _engine_config_schema = {
 def validate_engine_config(d):
     engine_config = d['experiment']['execution_engine']['engine_config']
     jsonschema.validate(engine_config, _engine_config_schema)
+    validated = True
+    return validated
 
 
 def validate_instructions(d):
@@ -42,9 +44,13 @@ def validate_instructions(d):
     url = engine_config['url'].rstrip('/')
     auth = (engine_config['auth']['username'], engine_config['auth']['password'])
     r = requests.get('{}/tasks/schema'.format(url), auth=auth)
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except:
+        return False
     instructions_schema = r.json()
     jsonschema.validate(instructions, instructions_schema)
+    return True
 
 
 def run(d):
