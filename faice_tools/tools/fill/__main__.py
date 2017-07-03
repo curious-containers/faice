@@ -1,8 +1,11 @@
+import json
+import sys
 from argparse import ArgumentParser
 
-from faice_tools.tools.fill.template import load_template_file, load_template_url
-from faice_tools.tools.fill.template import find_variables, fill_template
-from faice_tools.tools.fill.template import write_experiment_file
+from faice_tools.experiments import validate_experiment
+from faice_tools.templates import find_variables, fill_template
+from faice_tools.templates import load_template_file, load_template_url
+from faice_tools.templates import write_experiment_file
 
 
 def main():
@@ -18,8 +21,15 @@ def main():
         help='read experiment template from local FILE'
     )
     parser.add_argument(
-        '-o', '--output-file', dest='output_file', metavar='FILE', required=True,
-        help='write resulting experiment to a FILE'
+        '-o', '--output-file', dest='output_file', metavar='FILE',
+        help="""write resulting experiment to a FILE;
+             experiment will be written to stdout, if no FILE is provided"""
+    )
+    parser.add_argument(
+        '-n', '--non-interactive', dest='non_interactive', action='store_true',
+        help="""do not provide an interactive cli prompt to fill undeclared variables;
+        relies on a json document provided via stdin;
+        will fail, if variables are missing in document"""
     )
 
     args = parser.parse_args()
@@ -31,12 +41,29 @@ def main():
         template = load_template_url(args.template_url)
 
     variables = find_variables(template)
-    fillers = {}
-    for variable in variables:
-        fillers[variable] = input("{}: ".format(variable))
 
-    experiment = fill_template(template, fillers)
-    write_experiment_file(experiment, args.output_file)
+    if variables:
+        if args.non_interactive:
+            stdin = sys.stdin.read()
+            fillers = json.loads(stdin)
+            for variable in variables:
+                if variable not in fillers:
+                    print('missing variable {} in json document provided via stdin'.format(variable), file=sys.stderr)
+                    exit(1)
+            template = fill_template(template, fillers)
+        else:
+            fillers = {}
+            for variable in variables:
+                fillers[variable] = input("{}: ".format(variable))
+            template = fill_template(template, fillers)
+
+    experiment = json.loads(template)
+    validate_experiment(experiment)
+
+    if args.output_file:
+        write_experiment_file(experiment, args.output_file)
+    else:
+        print(json.dumps(experiment, indent=4))
 
 if __name__ == '__main__':
     main()

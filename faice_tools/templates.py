@@ -25,8 +25,7 @@ def find_variables(template):
 
 def fill_template(template, fillers):
     t = Template(template)
-    e = t.render(fillers)
-    return json.loads(e)
+    return t.render(fillers)
 
 
 def write_experiment_file(experiment, experiment_file):
