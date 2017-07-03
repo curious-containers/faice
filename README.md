@@ -1,7 +1,7 @@
 # FAICE
 
 FAICE (Fair Collaboration and Experiments) is a tool suite, helping researchers to work with experiments published in
-the FAICE description format.
+the FAICE description format. The FAICE software is developed at [CBMI](https://cbmi.htw-berlin.de/) ([HTW Berlin](https://www.htw-berlin.de/) - University of Applied Sciences)
 
 ## Install
 

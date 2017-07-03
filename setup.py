@@ -4,11 +4,12 @@ from distutils.core import setup
 
 setup(
     name='faice',
-    version='0.2',
+    version='0.3',
     summary="""FAICE (Fair Collaboration and Experiments) is a tool suite,
     helping researchers to work with experiments published in the FAICE description format.""",
     description="""FAICE (Fair Collaboration and Experiments) is a tool suite,
-    helping researchers to work with experiments published in the FAICE description format.""",
+    helping researchers to work with experiments published in the FAICE description format.
+    The FAICE software is developed at CBMI (HTW Berlin - University of Applied Sciences)""",
     author='Christoph Jansen',
     author_email='Christoph.Jansen@htw-berlin.de',
     url='https://github.com/curiouscontainers/faice',

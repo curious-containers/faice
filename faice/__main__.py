@@ -18,13 +18,22 @@ TOOLS = OrderedDict([
 ])
 
 
+def _usage_exit():
+    print("FAICE  Copyright (C) 2017  Christoph Jansen")
+    print("This program comes with ABSOLUTELY NO WARRANTY.")
+    print("This is free software, and you are welcome to")
+    print("redistribute it under certain conditions.")
+    print('')
+    print('usage:')
+    for key in TOOLS:
+        _, tail = os.path.split(sys.argv[0])
+        print(tail, key)
+    exit(1)
+
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in TOOLS:
-        print('usage:')
-        for key in TOOLS:
-            _, tail = os.path.split(sys.argv[0])
-            print(tail, key)
-        exit(1)
+        _usage_exit()
 
     tool = TOOLS[sys.argv[1]]
     sys.argv[0] = '{} {}'.format(sys.argv[0], sys.argv[1])
