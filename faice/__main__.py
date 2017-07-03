@@ -1,3 +1,4 @@
+import os
 import sys
 from collections import OrderedDict
 
@@ -21,7 +22,8 @@ def main():
     if len(sys.argv) < 2 or sys.argv[1] not in TOOLS:
         print('usage:')
         for key in TOOLS:
-            print(sys.argv[0], key)
+            _, tail = os.path.split(sys.argv[0])
+            print(tail, key)
         exit(1)
 
     tool = TOOLS[sys.argv[1]]
