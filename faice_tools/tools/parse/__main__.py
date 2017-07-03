@@ -2,10 +2,9 @@ import json
 import sys
 from argparse import ArgumentParser
 
-from faice_tools.experiments import validate_experiment
+from faice_tools.experiments import validate_experiment, write_experiment_file
 from faice_tools.templates import find_variables, fill_template
-from faice_tools.templates import load_template_file, load_template_url
-from faice_tools.templates import write_experiment_file
+from faice_tools.helpers import load_local, load_url
 
 
 def main():
@@ -39,9 +38,9 @@ def main():
 
     template = None
     if args.template_file:
-        template = load_template_file(args.template_file)
+        template = load_local(args.template_file)
     elif args.template_url:
-        template = load_template_url(args.template_url)
+        template = load_url(args.template_url)
 
     variables = find_variables(template)
 

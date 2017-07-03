@@ -1,4 +1,6 @@
+import os
 import sys
+import json
 import jsonschema
 
 from faice_tools.schemas import experiment_schema, experiment_schema_1
@@ -15,3 +17,8 @@ def validate_experiment(d):
     validated = engine.validate_instructions(d)
     if not validated:
         print('instructions schema could not be validated', file=sys.stderr)
+
+
+def write_experiment_file(d, experiment_file):
+    with open(os.path.expanduser(experiment_file), 'w') as f:
+        json.dump(d, f, indent=4)
