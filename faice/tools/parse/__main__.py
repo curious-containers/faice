@@ -2,9 +2,9 @@ import json
 import sys
 from argparse import ArgumentParser
 
-from faice_tools.experiments import validate_experiment, write_experiment_file
-from faice_tools.templates import find_variables, fill_template
-from faice_tools.helpers import load_local, load_url
+from faice.experiments import validate_experiment, write_experiment_file
+from faice.templates import find_variables, fill_template
+from faice.helpers import load_local, load_url
 
 
 def main():

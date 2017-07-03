@@ -3,8 +3,8 @@ import sys
 import json
 import jsonschema
 
-from faice_tools.schemas import experiment_schema, experiment_schema_1
-from faice_tools.engines import get_engine
+from faice.schemas import experiment_schema, experiment_schema_1
+from faice.engines import get_engine
 
 
 def validate_experiment(d):

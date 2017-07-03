@@ -1,4 +1,4 @@
-from faice_tools.execution_engines import curious_containers
+from faice.execution_engines import curious_containers
 
 
 ENGINES = {

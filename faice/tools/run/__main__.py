@@ -1,9 +1,9 @@
 import json
 from argparse import ArgumentParser
 
-from faice_tools.helpers import load_local, load_url
-from faice_tools.experiments import validate_experiment
-from faice_tools.engines import get_engine
+from faice.helpers import load_local, load_url
+from faice.experiments import validate_experiment
+from faice.engines import get_engine
 
 
 def main():

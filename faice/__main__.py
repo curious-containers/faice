@@ -1,11 +1,11 @@
 import sys
 from collections import OrderedDict
 
-from faice_tools.tools.adapt.__main__ import main as adapt_main
-from faice_tools.tools.parse.__main__ import main as parse_main
-from faice_tools.tools.run.__main__ import main as run_main
-from faice_tools.tools.validate.__main__ import main as validate_main
-from faice_tools.tools.vagrant.__main__ import main as vagrant_main
+from faice.tools.adapt.__main__ import main as adapt_main
+from faice.tools.parse.__main__ import main as parse_main
+from faice.tools.run.__main__ import main as run_main
+from faice.tools.validate.__main__ import main as validate_main
+from faice.tools.vagrant.__main__ import main as vagrant_main
 
 
 TOOLS = OrderedDict([
