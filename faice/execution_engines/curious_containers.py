@@ -63,10 +63,10 @@ def run(d):
     pprint(r.json())
 
 
-def adapt(d, options):
+def adapt(d, use_local_execution_engine=False, use_local_input_files=False, use_local_result_files=False):
     c = deepcopy(d)
 
-    if options.get('use_local_execution_engine'):
+    if use_local_execution_engine:
         c['experiment']['execution_engine']['engine_config'] = {
             'url': 'http://localhost:8000',
             'auth': {
@@ -75,7 +75,7 @@ def adapt(d, options):
             }
         }
 
-    if options.get('use_local_input_files'):
+    if use_local_input_files:
         if c['experiment']['instructions'].get('tasks'):
             tasks = c['experiment']['instructions']['tasks']
         else:
@@ -88,7 +88,7 @@ def adapt(d, options):
                     'method': 'GET'
                 }
 
-    if options.get('use_local_result_files'):
+    if use_local_result_files:
         if c['experiment']['instructions'].get('tasks'):
             tasks = c['experiment']['instructions']['tasks']
         else:
@@ -111,5 +111,5 @@ def adapt(d, options):
     return c
 
 
-def vagrant(d):
+def vagrant(d, vagrant_directory):
     pass
