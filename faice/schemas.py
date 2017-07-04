@@ -35,7 +35,7 @@ experiment_schema_1 = {
         'execution_engine': {
             'type': 'object',
             'properties': {
-                'engine_type': {'type': {'enum': ['curious_containers']}},
+                'engine_type': {'enum': ['curious-containers']},
                 'engine_config': {'type': 'object'}
             },
             'required': ['engine_type', 'engine_config'],
@@ -51,10 +51,10 @@ experiment_schema_1 = {
                         '^[a-zA-Z0-9.:/-]+$': {
                             'type': 'object',
                             'properties': {
-                                'app_type': {'type': {'enum': ['docker']}},
-                                'src_type': {'type': {'enum': ['git']}},
+                                'app_type': {'enum': ['docker']},
+                                'src_type': {'enum': ['git']},
                                 'src_config': {'type': 'object'},
-                                'build_type': {'type': {'enum': ['docker']}},
+                                'build_type': {'enum': ['docker']},
                                 'build_config': {'type': 'object'}
                             },
                             'required': ['src_type', 'src_config', 'build_type', 'build_config'],
@@ -86,7 +86,7 @@ experiment_schema_1 = {
                             ]
                         }
                     },
-                    'required': ['format', 'is_optional'],
+                    'required': ['descriptions', 'is_optional'],
                     'additionalProperties': False
                 }
             },
@@ -99,8 +99,11 @@ experiment_schema_1 = {
 }
 
 experiment_schema = {
-    'format_version': {'type': {'enum': ['1']}},
-    'experiment': {'type': 'object'},
+    'type': 'object',
+    'properties': {
+        'format_version': {'enum': ['1']},
+        'experiment': {'type': 'object'}
+    },
     'required': ['format_version', 'experiment'],
     'additionalProperties': False
 }
