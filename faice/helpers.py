@@ -1,5 +1,6 @@
 import os
 import requests
+import socket
 
 
 def load_local(file_path):
@@ -11,3 +12,12 @@ def load_url(url):
     r = requests.get(url)
     r.raise_for_status()
     return r.text
+
+
+# https://stackoverflow.com/a/2838309
+def find_open_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', 0))
+    port = s.getsockname()[1]
+    s.close()
+    return port
