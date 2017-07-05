@@ -109,12 +109,10 @@ def adapt(d, use_local_input_files=False, use_local_result_files=False):
 def _adapt_for_vagrant(d, port):
     c = deepcopy(d)
 
-    c['experiment']['execution_engine']['engine_config'] = {
-        'url': 'http://localhost:{}/cc'.format(port),
-        'auth': {
-            'username': 'user',
-            'password': 'PASSWORD'
-        }
+    c['experiment']['execution_engine']['engine_config']['url'] = 'http://localhost:{}/cc'.format(port)
+    c['experiment']['execution_engine']['engine_config']['auth'] = {
+        'username': 'user',
+        'password': 'PASSWORD'
     }
 
     return c
@@ -254,7 +252,7 @@ def vagrant(d, output_directory):
         '    ports:',
         '      - "27017:27017"',
         '    volumes:',
-        '      - /vagrant/curious-containers/mongo/db:/data/db',
+        '      - /root/curious-containers/mongo/db:/data/db',
         '    tty: true',
         '',
         '  mongo-seed:',
@@ -269,9 +267,9 @@ def vagrant(d, output_directory):
         '  dind:',
         '    image: docker:dind',
         '    privileged: true',
-        '    command: "docker daemon --insecure-registry=registry:5000 -H tcp://0.0.0.0:2375"',
+        '    command: "dockerd --insecure-registry=registry:5000 -H tcp://0.0.0.0:2375"',
         '    volumes:',
-        '      - /vagrant/curious-containers/dind/docker:/var/lib/docker',
+        '      - /root/curious-containers/dind/docker:/var/lib/docker',
         '    links:',
         '      - registry',
         '      - file-server',
@@ -293,7 +291,7 @@ def vagrant(d, output_directory):
         '    environment:',
         '      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data',
         '    volumes:',
-        '    - /vagrant/curious-containers/registry/data:/data',
+        '    - /root/curious-containers/registry/data:/data',
         ''
     ]
 
