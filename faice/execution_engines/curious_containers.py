@@ -47,8 +47,8 @@ def validate_instructions(d):
     instructions = d['experiment']['instructions']
     url = engine_config['url'].rstrip('/')
     auth = (engine_config['auth']['username'], engine_config['auth']['password'])
-    r = requests.get('{}/tasks/schema'.format(url), auth=auth)
     try:
+        r = requests.get('{}/tasks/schema'.format(url), auth=auth)
         r.raise_for_status()
     except:
         return False
@@ -110,7 +110,7 @@ def _adapt_for_vagrant(d, port):
     c = deepcopy(d)
 
     c['experiment']['execution_engine']['engine_config'] = {
-        'url': 'http://localhost:{}'.format(port),
+        'url': 'http://localhost:{}/cc'.format(port),
         'auth': {
             'username': 'user',
             'password': 'PASSWORD'
@@ -127,7 +127,7 @@ def vagrant(d, output_directory):
     docker_compose_version = '1.14.0'
 
     cc_host_port = find_open_port()
-    cc_guest_port = 8000
+    cc_guest_port = 80
     vm_memory = 4096
     vm_cpus = 2
     vm_box = 'trusty64'
@@ -138,6 +138,7 @@ def vagrant(d, output_directory):
     provision_file_name = 'provision.sh'
     compose_file_name = 'docker-compose.yml'
     experiment_file_name = 'experiment.json'
+    apache_file_name = 'cc-server.conf'
 
     vagrant_file_lines = [
         'VAGRANTFILE_API_VERSION = "2"',
@@ -164,25 +165,44 @@ def vagrant(d, output_directory):
         'set -euo pipefail',
         '',
         'apt-get update',
-        'apt-get install -y git docker.io',
+        'apt-get install -y curl git docker.io apache2',
         '',
+        '# docker and docker-compose',
         'usermod -aG docker {}'.format(vm_user),
-        '',
         'curl -L https://github.com/docker/compose/releases/download/{}/docker-compose-$(uname -s)-$(uname -m) '
         '> /usr/local/bin/docker-compose'.format(docker_compose_version),
         'chmod +x /usr/local/bin/docker-compose',
         '',
+        '# cc-server',
         'cd ~',
         'git clone -b {} --depth 1 https://github.com/curious-containers/cc-server.git'.format(cc_server_version),
-        '',
         'cd ~/cc-server',
         'cp /vagrant/{} ./compose'.format(compose_file_name),
         'cp compose/config_samples/config.toml compose',
         'cp compose/config_samples/credentials.toml compose',
         'bash compose/scripts/create_systemd_unit_file -d $(pwd)',
-        '',
         'systemctl enable cc-server',
         'systemctl start cc-server',
+        '',
+        '# cc-ui',
+        'cd',
+        'curl -sL https://deb.nodesource.com/setup_6.x | bash -',
+        'apt-get install -y nodejs',
+        'git clone --depth 1 https://github.com/curious-containers/cc-ui.git',
+        'cd cc-ui',
+        'touch src/config.js',
+        'npm install',
+        'npm update',
+        'npm run build',
+        'mv build /opt/cc-ui',
+        'chown -R www-data:www-data /opt/cc-ui',
+        '',
+        '# apache2',
+        'cp /vagrant/{} /etc/apache2/sites-available'.format(apache_file_name),
+        'a2enmod proxy_http',
+        'a2dissite 000-default',
+        'a2ensite cc-server',
+        'systemctl restart apache2',
         ''
     ]
 
@@ -277,10 +297,25 @@ def vagrant(d, output_directory):
         ''
     ]
 
+    apache_file_lines = [
+        '<VirtualHost *:80>',
+        '    ProxyRequests Off',
+        '    ProxyPass /cc http://localhost:8000',
+        '    ProxyPassReverse /cc http://localhost:8000',
+        '',
+        '    DocumentRoot /opt/cc-ui',
+        '    <Directory /opt/cc-ui>',
+        '        Require all granted',
+        '    </Directory>',
+        '</VirtualHost>',
+        ''
+    ]
+
     files = [
         (vagrant_file_name, vagrant_file_lines),
         (provision_file_name, provision_file_lines),
-        (compose_file_name, compose_file_lines)
+        (compose_file_name, compose_file_lines),
+        (apache_file_name, apache_file_lines)
     ]
 
     for file_name, file_lines in files:
