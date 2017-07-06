@@ -1,6 +1,8 @@
 import os
+import sys
 import requests
 import socket
+import textwrap
 
 
 def load_local(file_path):
@@ -21,3 +23,12 @@ def find_open_port():
     port = s.getsockname()[1]
     s.close()
     return port
+
+
+def print_user_text(blocks, error=False):
+    if error:
+        for block in blocks:
+            print(textwrap.fill(block), file=sys.stderr)
+    else:
+        for block in blocks:
+            print(textwrap.fill(block))

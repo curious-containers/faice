@@ -3,7 +3,7 @@ import sys
 import json
 from argparse import ArgumentParser
 
-from faice.helpers import load_local, load_url
+from faice.helpers import load_local, load_url, print_user_text
 from faice.experiments import validate_experiment
 from faice.engines import get_engine
 
@@ -28,13 +28,20 @@ def main():
         help='save generated files in a DIRECTORY'
     )
 
+    parser.add_argument(
+        '-l', '--use-local-data', dest='use_local_data', action='store_true',
+        help='change references pointing to remote input and result files '
+             'to local references in the generated experiment.json file'
+    )
+
     args = parser.parse_args()
 
     output_directory = os.path.expanduser(args.output_directory)
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     elif not os.path.isdir(output_directory):
-        print('specified output-directory path already exists, but is not a directory', file=sys.stderr)
+        user_text = ['specified output-directory path already exists, but is not a directory']
+        print_user_text(user_text, error=True)
         sys.exit(1)
 
     d = None
@@ -47,10 +54,7 @@ def main():
 
     validate_experiment(d)
     engine = get_engine(d)
-    engine.vagrant(d, output_directory)
-
-    print('files have been written successfully')
-    print('run: vagrant up --provider virtualbox')
+    engine.vagrant(d, output_directory=output_directory, use_local_data=args.use_local_data)
 
 
 if __name__ == '__main__':

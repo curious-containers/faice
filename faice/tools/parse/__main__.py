@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 from faice.experiments import validate_experiment, write_experiment_file
 from faice.templates import find_variables, fill_template
-from faice.helpers import load_local, load_url
+from faice.helpers import load_local, load_url, print_user_text
 
 
 def main():
@@ -23,15 +23,14 @@ def main():
     )
 
     parser.add_argument(
-        '-o', '--output-file', dest='output_file', metavar='FILE',
-        help="""write resulting experiment to a FILE;
-             experiment will be written to stdout, if no FILE is provided"""
+        '-o', '--output-file', dest='output_file', metavar='FILE', required=True,
+        help='write resulting experiment to a JSON formatted FILE'
     )
 
     parser.add_argument(
         '-n', '--non-interactive', dest='non_interactive', action='store_true',
-        help="""do not provide an interactive cli prompt to parse undeclared variables;
-        relies on a json document provided via stdin"""
+        help='do not provide an interactive cli prompt to parse undeclared variables and instead provide a JSON '
+             'document via stdin'
     )
 
     args = parser.parse_args()
@@ -50,7 +49,10 @@ def main():
             fillers = json.loads(stdin)
             for variable in variables:
                 if variable not in fillers:
-                    print('missing variable {} in json document provided via stdin'.format(variable), file=sys.stderr)
+                    print_user_text(
+                        ['missing variable {} in json document provided via stdin'.format(variable)],
+                        error=True
+                    )
                     exit(1)
             template = fill_template(template, fillers)
         else:
@@ -58,14 +60,13 @@ def main():
             for variable in variables:
                 fillers[variable] = input("{}: ".format(variable))
             template = fill_template(template, fillers)
+            print_user_text([''])
 
     d = json.loads(template)
     validate_experiment(d)
 
-    if args.output_file:
-        write_experiment_file(d, args.output_file)
-    else:
-        print(json.dumps(d, indent=4))
+    write_experiment_file(d, args.output_file)
+
 
 if __name__ == '__main__':
     main()

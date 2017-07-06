@@ -2,38 +2,44 @@ import os
 import sys
 from collections import OrderedDict
 
-from faice.tools.adapt.__main__ import main as adapt_main
 from faice.tools.parse.__main__ import main as parse_main
 from faice.tools.run.__main__ import main as run_main
 from faice.tools.validate.__main__ import main as validate_main
 from faice.tools.vagrant.__main__ import main as vagrant_main
+from faice.helpers import print_user_text
 
 
 TOOLS = OrderedDict([
     ('parse', parse_main),
-    ('adapt', adapt_main),
     ('validate', validate_main),
     ('vagrant', vagrant_main),
     ('run', run_main)
 ])
 
 
-def _usage_exit():
-    print("FAICE  Copyright (C) 2017  Christoph Jansen")
-    print("This program comes with ABSOLUTELY NO WARRANTY.")
-    print("This is free software, and you are welcome to")
-    print("redistribute it under certain conditions.")
-    print('')
-    print('usage:')
+def _user_text():
+    result = [
+        'FAICE  Copyright (C) 2017  Christoph Jansen',
+        '',
+        'This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it'
+        'under certain conditions. See the LICENSE file distributed with this software for details.',
+        '',
+        'usage:',
+        '',
+    ]
+
     for key in TOOLS:
         _, tail = os.path.split(sys.argv[0])
-        print(tail, key)
-    exit(1)
+        result.append('{} {}'.format(tail, key))
+
+    return result
 
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in TOOLS:
-        _usage_exit()
+        user_text = _user_text()
+        print_user_text(user_text)
+        exit(1)
 
     tool = TOOLS[sys.argv[1]]
     sys.argv[0] = '{} {}'.format(sys.argv[0], sys.argv[1])

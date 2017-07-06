@@ -1,7 +1,7 @@
 import json
 from argparse import ArgumentParser
 
-from faice.helpers import load_local, load_url
+from faice.helpers import load_local, load_url, print_user_text
 from faice.experiments import validate_experiment
 
 
@@ -31,7 +31,6 @@ def main():
         d = json.loads(raw)
 
     validate_experiment(d)
-
 
 if __name__ == '__main__':
     main()

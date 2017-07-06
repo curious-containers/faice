@@ -5,7 +5,7 @@ import jsonschema
 from copy import deepcopy
 from pprint import pprint
 
-from faice.helpers import find_open_port
+from faice.helpers import find_open_port, print_user_text
 
 
 _engine_config_schema = {
@@ -47,14 +47,56 @@ def validate_instructions(d):
     instructions = d['experiment']['instructions']
     url = engine_config['url'].rstrip('/')
     auth = (engine_config['auth']['username'], engine_config['auth']['password'])
+    instructions_schema = None
     try:
         r = requests.get('{}/tasks/schema'.format(url), auth=auth)
         r.raise_for_status()
+        instructions_schema = r.json()
     except:
-        return False
-    instructions_schema = r.json()
-    jsonschema.validate(instructions, instructions_schema)
-    return True
+        pass
+
+    if instructions_schema:
+        jsonschema.validate(instructions, instructions_schema)
+
+    if instructions.get('tasks'):
+        raise Exception(
+            'Using multiple Curious Containers tasks in instructions is not supported with FAICE.'
+        )
+    input_files = instructions['input_files']
+    input_files_meta = d['experiment']['meta_data']['input_files']
+    if not isinstance(input_files_meta, list):
+        raise Exception(
+            'input_files in meta_data does not contain an array, but is required by Curious Containers execution engine.'
+        )
+    if len(input_files) != len(input_files_meta):
+        raise Exception(
+            'The number of input_files in instructions must be equals the number of input_files in meta_data'
+        )
+    for input_file in input_files_meta:
+        if input_file['is_optional']:
+            raise Exception(
+                'input_files in meta_data cannot be marked as optional, because it is not supported by Curious '
+                'Containers.'
+            )
+
+    result_files = instructions['result_files']
+    result_files_meta = d['experiment']['meta_data']['result_files']
+    if not isinstance(result_files_meta, dict):
+        raise Exception(
+            'input_files in meta_data does not contain an object, but is required by Curious Containers execution '
+            'engine.'
+        )
+    for result_file in result_files:
+        local_result_file = result_file['local_result_file']
+        if local_result_file not in result_files_meta:
+            raise Exception(
+                'result_file {} in instructions does not have a corresponding entry in results_files in meta_data.'
+                ''.format(local_result_file)
+            )
+
+    if instructions_schema:
+        return True
+    return False
 
 
 def run(d):
@@ -64,13 +106,29 @@ def run(d):
     auth = (engine_config['auth']['username'], engine_config['auth']['password'])
     r = requests.post('{}/tasks'.format(url), auth=auth, json=instructions)
     r.raise_for_status()
-    pprint(r.json())
+    data = r.json()
+
+    user_text = [
+        '',
+        'The task has been scheduled with Curious Containers execution engine. It may take some time to finish.',
+        '',
+        'Response from Curious Containers:'
+    ]
+
+    print_user_text(user_text)
+    pprint(data)
 
 
-def adapt(d, use_local_input_files=False, use_local_result_files=False):
+def _adapt_for_vagrant(d, port, use_local_data):
     c = deepcopy(d)
 
-    if use_local_input_files:
+    c['experiment']['execution_engine']['engine_config']['url'] = 'http://localhost:{}/cc'.format(port)
+    c['experiment']['execution_engine']['engine_config']['auth'] = {
+        'username': 'user',
+        'password': 'PASSWORD'
+    }
+
+    if use_local_data:
         if c['experiment']['instructions'].get('tasks'):
             tasks = c['experiment']['instructions']['tasks']
         else:
@@ -79,11 +137,10 @@ def adapt(d, use_local_input_files=False, use_local_result_files=False):
             for i, input_file in enumerate(task['input_files']):
                 input_file['connector_type'] = 'http'
                 input_file['connector_access'] = {
-                    'url': 'http://file-server/{}'.format(i),
+                    'url': 'http://172.18.0.1:6000/file_{}'.format(i+1),
                     'method': 'GET'
                 }
 
-    if use_local_result_files:
         if c['experiment']['instructions'].get('tasks'):
             tasks = c['experiment']['instructions']['tasks']
         else:
@@ -96,7 +153,7 @@ def adapt(d, use_local_input_files=False, use_local_result_files=False):
                     'local_result_file': result_file_name,
                     'connector_type': 'http',
                     'connector_access': {
-                        'url': 'http://file-server/{}'.format(result_file_name),
+                        'url': 'http://172.18.0.1:6000/{}'.format(result_file_name),
                         'method': 'POST'
                     }
                 }
@@ -106,19 +163,7 @@ def adapt(d, use_local_input_files=False, use_local_result_files=False):
     return c
 
 
-def _adapt_for_vagrant(d, port):
-    c = deepcopy(d)
-
-    c['experiment']['execution_engine']['engine_config']['url'] = 'http://localhost:{}/cc'.format(port)
-    c['experiment']['execution_engine']['engine_config']['auth'] = {
-        'username': 'user',
-        'password': 'PASSWORD'
-    }
-
-    return c
-
-
-def vagrant(d, output_directory):
+def vagrant(d, output_directory, use_local_data):
     engine_config = d['experiment']['execution_engine']['engine_config']
 
     cc_server_version = engine_config['install_requirements']['cc_server_version']
@@ -159,9 +204,6 @@ def vagrant(d, output_directory):
     provision_file_lines = [
         '#!/usr/bin/env bash',
         '',
-        '# bash strict mode',
-        'set -euo pipefail',
-        '',
         'apt-get update',
         'apt-get install -y curl git docker.io apache2',
         '',
@@ -201,6 +243,21 @@ def vagrant(d, output_directory):
         'a2dissite 000-default',
         'a2ensite cc-server',
         'systemctl restart apache2',
+        '',
+        'echo',
+        'echo setup successful',
+        'echo "waiting for Curious Containers to finish initialization..."',
+        'for i in {1..30}; do',
+        '    http_code=$(curl -sL -w "%{http_code}" http://localhost:8000/ -o /dev/null)',
+        '    if [ "${http_code}" == "200" ]; then',
+        '        echo "initialization successfull"',
+        '        exit 0',
+        '    fi',
+        '    sleep 10',
+        '    echo "still waiting ..."',
+        'done',
+        '',
+        'echo "timeout: Curious Containers did not yet finish initialization"',
         ''
     ]
 
@@ -277,7 +334,9 @@ def vagrant(d, output_directory):
         '',
         '  file-server:',
         '    build: ./cc-server-image',
-        '    command: "gunicorn -w 4 -b 0.0.0.0:80 file_server.__main__:app"',
+        '    command: "gunicorn -w 4 -b 0.0.0.0:6000 file_server.__main__:app"',
+        '    ports:',
+        '      - "6000:6000"',
         '    volumes:',
         '      - ./file_server:/opt/file_server:ro',
         '      - /vagrant/curious-containers/input_files:/root/input_files:ro',
@@ -322,6 +381,65 @@ def vagrant(d, output_directory):
         with open(file_path, 'w') as f:
             f.write(file_content)
 
-    c = _adapt_for_vagrant(d, port=cc_host_port)
+    c = _adapt_for_vagrant(d, port=cc_host_port, use_local_data=use_local_data)
     with open(os.path.join(output_directory, experiment_file_name), 'w') as f:
         json.dump(c, f, indent=4)
+
+    addtional_directories = [
+        os.path.join(output_directory, 'curious-containers', 'input_files'),
+        os.path.join(output_directory, 'curious-containers', 'result_files'),
+        os.path.join(output_directory, 'curious-containers', 'logs')
+    ]
+
+    for directory in addtional_directories:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+    user_text = [
+        '',
+        'Change to the output directory and run:',
+        '',
+        'vagrant up --provider virtualbox',
+        '',
+        'This will start a virtual machine, containing the Curious Containers execution engine. Vagrant and VirtualBox '
+        'are required beforehand.',
+        '',
+        'Go to the following address in a browser to access a graphical user interface:',
+        '',
+        'http://localhost:{}'.format(cc_host_port),
+        'username: user',
+        'password: PASSWORD'
+    ]
+
+    if use_local_data:
+        user_text += [
+            '',
+            'The option --use-local-data has been set. It is required, that the input files listed below are copied '
+            'to the appropriate file system locations before running the experiment:'
+        ]
+
+        input_files_meta = c['experiment']['meta_data']['input_files']
+        for i, input_file in enumerate(input_files_meta):
+            file_name = 'file_{}'.format(i+1)
+            file_path = os.path.join(output_directory, 'curious-containers', 'input_files', file_name)
+            description = input_file['description']
+            user_text += [
+                '',
+                'file description: {}'.format(description),
+                'file location: {}'.format(file_path),
+            ]
+
+        result_file_directory = os.path.join(output_directory, 'curious-containers', 'result_files')
+        user_text += [
+            '',
+            'When running the experiment, resulting files will be written to {}'.format(result_file_directory)
+        ]
+
+    user_text += [
+        '',
+        'In order to run the experiment in the virtual machine use faice as follows:',
+        '',
+        'faice run -f experiment.json'
+    ]
+
+    print_user_text(user_text)
