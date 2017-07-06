@@ -49,7 +49,7 @@ FAICE experiments are JSON files, which may contain sensitive information like c
 execution engine. Instead of publishing an experiment containing these secrets, they should be replaced by variables.
 For example `password: "SECRET"` can be replaced with a variable `password: "{{data_password}}"` in double curly braces.
 An experiment file containing variables is called **template**. The syntax for variables is borrowed from the Python
-templating engine Jinja2 and other similar templating engines used various programming languages.
+templating engine Jinja2 and other similar templating engines used in various programming languages.
 
 The `faice parse` tool takes an experiment **template** as input and helps with filling out any undeclared variables.
 The resulting experiment file will be written to the file system and can be used with other FAICE tools. If the
