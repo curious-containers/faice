@@ -51,7 +51,7 @@ For example `password: "SECRET"` can be replaced with a variable `password: "{{d
 An experiment file containing variables is called **template**. The syntax for variables is borrowed from the Python
 templating engine Jinja2 and other similar templating engines used in various programming languages.
 
-The `faice parse` tool takes an experiment **template** as input and helps with filling out any undeclared variables.
+The `faice parse` tool takes an experiment template as input and helps with filling out any undeclared variables.
 The resulting experiment file will be written to the file system and can be used with other FAICE tools. If the
 appropriate value for a certain variable is unknown it can be left blank, as long as the resuling JSON file is valid.
 Take a look at the remaining FAICE tools to use an experiment file generated with `faice parse`.
@@ -62,14 +62,14 @@ The `faice validate` tool can be used to validate the format of an **experiment*
 
 ### Run
 
-The `faice run` tool runs the given experiment by sending the instructions contained in the **experiment** JSON file to
+The `faice run` tool runs the given **experiment** by sending the instructions contained in the experiment JSON file to
 the specified execution engine. If the experiment JSON file was generated from an experiment template and not all
 variables have been filled with correct values, it is advised to check the `faice vagrant` tool, before trying to run
 an experiment.
 
 ### Vagrant
 
-If the experiment JSON file was generated from an experiment template and not all variables have been filled with
+If the **experiment** JSON file was generated from an experiment template and not all variables have been filled with
 correct values, the `faice vagrant` tool can be used to set up a local execution engine. When using a local execution
 engine, it is not necessary to know any secret credentials for online resources.
 
