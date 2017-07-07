@@ -12,7 +12,7 @@ setup(
                 '(HTW Berlin - University of Applied Sciences)',
     author='Christoph Jansen',
     author_email='Christoph.Jansen@htw-berlin.de',
-    url='https://github.com/curiouscontainers/faice',
+    url='https://github.com/curious-containers/faice',
     scripts=['bin/faice'],
     packages=[
         'faice',
