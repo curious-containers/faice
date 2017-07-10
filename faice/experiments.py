@@ -13,7 +13,7 @@ def validate_experiment(d):
     user_text_error = []
     try:
         jsonschema.validate(d, experiment_schema)
-        jsonschema.validate(d['experiment'], experiment_schema_1)
+        jsonschema.validate(d, experiment_schema_1)
         engine = get_engine(d)
 
         validated = engine.validate_engine_config(d)

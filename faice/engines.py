@@ -7,5 +7,5 @@ ENGINES = {
 
 
 def get_engine(d):
-    engine_type = d['experiment']['execution_engine']['engine_type']
+    engine_type = d['execution_engine']['engine_type']
     return ENGINES[engine_type]
