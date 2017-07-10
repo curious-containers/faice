@@ -13,7 +13,6 @@ setup(
     author='Christoph Jansen',
     author_email='Christoph.Jansen@htw-berlin.de',
     url='https://github.com/curious-containers/faice',
-    scripts=['bin/faice'],
     packages=[
         'faice',
         'faice.execution_engines',
@@ -23,6 +22,9 @@ setup(
         'faice.tools.vagrant',
         'faice.tools.validate'
     ],
+    entry_points={
+        'console_scripts': ['faice=faice.__main__:main']
+    },
     license='GPL-3.0',
     platforms=['any'],
     install_requires=['jinja2', 'requests', 'jsonschema']
