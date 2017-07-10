@@ -1,7 +1,7 @@
 import json
 from argparse import ArgumentParser
 
-from faice.helpers import load_local, load_url, print_user_text
+from faice.helpers import load_local, load_url
 from faice.experiments import validate_experiment
 
 

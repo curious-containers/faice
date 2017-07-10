@@ -32,10 +32,11 @@ _descriptions_object = {
 experiment_schema_1 = {
     'type': 'object',
     'properties': {
+        'format_version': {},
         'execution_engine': {
             'type': 'object',
             'properties': {
-                'engine_type': {'enum': ['curious-containers']},
+                'engine_type': {'enum': ['curious-containers', 'cwl-server']},
                 'engine_config': {'type': 'object'}
             },
             'required': ['engine_type', 'engine_config'],
@@ -51,10 +52,10 @@ experiment_schema_1 = {
                         '^[a-zA-Z0-9.:/-]+$': {
                             'type': 'object',
                             'properties': {
-                                'app_type': {'enum': ['docker']},
-                                'src_type': {'enum': ['git']},
+                                'app_type': {'enum': ['docker', 'commandline']},
+                                'src_type': {'enum': ['git', 'hg', 'svn', 'cvs', 'bzr']},
                                 'src_config': {'type': 'object'},
-                                'build_type': {'enum': ['docker']},
+                                'build_type': {'enum': ['docker', 'make', 'cmake', 'script']},
                                 'build_config': {'type': 'object'}
                             },
                             'required': ['src_type', 'src_config', 'build_type', 'build_config'],
@@ -94,16 +95,15 @@ experiment_schema_1 = {
             'additionalProperties': False
         }
     },
-    'required': ['execution_engine', 'instructions', 'meta_data'],
+    'required': ['format_version', 'execution_engine', 'instructions', 'meta_data'],
     'additionalProperties': False
 }
 
 experiment_schema = {
     'type': 'object',
     'properties': {
-        'format_version': {'enum': ['1']},
-        'experiment': {'type': 'object'}
+        'format_version': {'enum': ['1']}
     },
-    'required': ['format_version', 'experiment'],
-    'additionalProperties': False
+    'required': ['format_version'],
+    'additionalProperties': True
 }

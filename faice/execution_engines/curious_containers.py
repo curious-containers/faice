@@ -36,15 +36,15 @@ _engine_config_schema = {
 
 
 def validate_engine_config(d):
-    engine_config = d['experiment']['execution_engine']['engine_config']
+    engine_config = d['execution_engine']['engine_config']
     jsonschema.validate(engine_config, _engine_config_schema)
     validated = True
     return validated
 
 
 def validate_instructions(d):
-    engine_config = d['experiment']['execution_engine']['engine_config']
-    instructions = d['experiment']['instructions']
+    engine_config = d['execution_engine']['engine_config']
+    instructions = d['instructions']
     url = engine_config['url'].rstrip('/')
     auth = (engine_config['auth']['username'], engine_config['auth']['password'])
     instructions_schema = None
@@ -63,10 +63,11 @@ def validate_instructions(d):
             'Using multiple Curious Containers tasks in instructions is not supported with FAICE.'
         )
     input_files = instructions['input_files']
-    input_files_meta = d['experiment']['meta_data']['input_files']
+    input_files_meta = d['meta_data']['input_files']
     if not isinstance(input_files_meta, list):
         raise Exception(
-            'input_files in meta_data does not contain an array, but is required by Curious Containers execution engine.'
+            'input_files in meta_data does not contain an array, but is required by Curious Containers execution '
+            'engine.'
         )
     if len(input_files) != len(input_files_meta):
         raise Exception(
@@ -80,7 +81,7 @@ def validate_instructions(d):
             )
 
     result_files = instructions['result_files']
-    result_files_meta = d['experiment']['meta_data']['result_files']
+    result_files_meta = d['meta_data']['result_files']
     if not isinstance(result_files_meta, dict):
         raise Exception(
             'input_files in meta_data does not contain an object, but is required by Curious Containers execution '
@@ -100,8 +101,8 @@ def validate_instructions(d):
 
 
 def run(d):
-    engine_config = d['experiment']['execution_engine']['engine_config']
-    instructions = d['experiment']['instructions']
+    engine_config = d['execution_engine']['engine_config']
+    instructions = d['instructions']
     url = engine_config['url'].rstrip('/')
     auth = (engine_config['auth']['username'], engine_config['auth']['password'])
     r = requests.post('{}/tasks'.format(url), auth=auth, json=instructions)
@@ -122,17 +123,17 @@ def run(d):
 def _adapt_for_vagrant(d, port, use_local_data):
     c = deepcopy(d)
 
-    c['experiment']['execution_engine']['engine_config']['url'] = 'http://localhost:{}/cc'.format(port)
-    c['experiment']['execution_engine']['engine_config']['auth'] = {
+    c['execution_engine']['engine_config']['url'] = 'http://localhost:{}/cc'.format(port)
+    c['execution_engine']['engine_config']['auth'] = {
         'username': 'user',
         'password': 'PASSWORD'
     }
 
     if use_local_data:
-        if c['experiment']['instructions'].get('tasks'):
-            tasks = c['experiment']['instructions']['tasks']
+        if c['instructions'].get('tasks'):
+            tasks = c['instructions']['tasks']
         else:
-            tasks = [c['experiment']['instructions']]
+            tasks = [c['instructions']]
         for task in tasks:
             for i, input_file in enumerate(task['input_files']):
                 input_file['connector_type'] = 'http'
@@ -141,10 +142,10 @@ def _adapt_for_vagrant(d, port, use_local_data):
                     'method': 'GET'
                 }
 
-        if c['experiment']['instructions'].get('tasks'):
-            tasks = c['experiment']['instructions']['tasks']
+        if c['instructions'].get('tasks'):
+            tasks = c['instructions']['tasks']
         else:
-            tasks = [c['experiment']['instructions']]
+            tasks = [c['instructions']]
 
         for task in tasks:
             result_file_names = {result_file['local_result_file'] for result_file in task['result_files']}
@@ -164,7 +165,7 @@ def _adapt_for_vagrant(d, port, use_local_data):
 
 
 def vagrant(d, output_directory, use_local_data):
-    engine_config = d['experiment']['execution_engine']['engine_config']
+    engine_config = d['execution_engine']['engine_config']
 
     cc_server_version = engine_config['install_requirements']['cc_server_version']
     docker_compose_version = '1.14.0'
@@ -418,7 +419,7 @@ def vagrant(d, output_directory, use_local_data):
             'to the appropriate file system locations before running the experiment:'
         ]
 
-        input_files_meta = c['experiment']['meta_data']['input_files']
+        input_files_meta = c['meta_data']['input_files']
         for i, input_file in enumerate(input_files_meta):
             file_name = 'file_{}'.format(i+1)
             file_path = os.path.join(output_directory, 'curious-containers', 'input_files', file_name)
