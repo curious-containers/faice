@@ -6,6 +6,7 @@ from copy import deepcopy
 from pprint import pprint
 
 from faice.helpers import find_open_port, print_user_text
+from faice.schemas import src_code_schema, descriptions_array_schema, descriptions_object_schema
 
 
 _engine_config_schema = {
@@ -34,12 +35,41 @@ _engine_config_schema = {
     'additionalProperties': False
 }
 
+_meta_data_schema = {
+    'type': 'object',
+    'properties': {
+        'applications': {
+            'type': 'object',
+            'patternProperties': {
+                '^[a-zA-Z0-9.:/-]+$': src_code_schema
+            },
+            'additionalProperties': False
+        },
+        'input_files': descriptions_array_schema,
+        'result_files': descriptions_object_schema,
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'is_optional': {'type': 'boolean'},
+                'descriptions': {
+                    'oneOf': [
+                        descriptions_array_schema,
+                        descriptions_object_schema
+                    ]
+                }
+            },
+            'required': ['descriptions', 'is_optional'],
+            'additionalProperties': False
+        }
+    },
+    'required': ['input_files', 'result_files'],
+    'additionalProperties': False
+}
+
 
 def validate_engine_config(d):
     engine_config = d['execution_engine']['engine_config']
     jsonschema.validate(engine_config, _engine_config_schema)
-    validated = True
-    return validated
 
 
 def validate_instructions(d):
@@ -57,47 +87,44 @@ def validate_instructions(d):
 
     if instructions_schema:
         jsonschema.validate(instructions, instructions_schema)
+    else:
+        print_user_text([
+            '',
+            'Instructions could not be validated, because the corrisponding schema file could not be requested '
+            'from cc-server.'
+        ], error=True)
 
     if instructions.get('tasks'):
         raise Exception(
             'Using multiple Curious Containers tasks in instructions is not supported with FAICE.'
         )
-    input_files = instructions['input_files']
-    input_files_meta = d['meta_data']['input_files']
-    if not isinstance(input_files_meta, list):
-        raise Exception(
-            'input_files in meta_data does not contain an array, but is required by Curious Containers execution '
-            'engine.'
-        )
-    if len(input_files) != len(input_files_meta):
+
+
+def validate_meta_data(d):
+    meta_data = d['meta_data']
+    jsonschema.validate(meta_data, _meta_data_schema)
+
+    instructions = d['instructions']
+
+    if len(instructions['input_files']) != len(meta_data['input_files']):
         raise Exception(
             'The number of input_files in instructions must be equals the number of input_files in meta_data'
         )
-    for input_file in input_files_meta:
+
+    for input_file in meta_data['input_files']:
         if input_file['is_optional']:
             raise Exception(
                 'input_files in meta_data cannot be marked as optional, because it is not supported by Curious '
                 'Containers.'
             )
 
-    result_files = instructions['result_files']
-    result_files_meta = d['meta_data']['result_files']
-    if not isinstance(result_files_meta, dict):
-        raise Exception(
-            'input_files in meta_data does not contain an object, but is required by Curious Containers execution '
-            'engine.'
-        )
-    for result_file in result_files:
+    for result_file in instructions['result_files']:
         local_result_file = result_file['local_result_file']
-        if local_result_file not in result_files_meta:
+        if local_result_file not in meta_data['result_files']:
             raise Exception(
                 'result_file {} in instructions does not have a corresponding entry in results_files in meta_data.'
                 ''.format(local_result_file)
             )
-
-    if instructions_schema:
-        return True
-    return False
 
 
 def run(d):
@@ -340,8 +367,8 @@ def vagrant(d, output_directory, use_local_data):
         '      - "6000:6000"',
         '    volumes:',
         '      - ./file_server:/opt/file_server:ro',
-        '      - /vagrant/curious-containers/input_files:/root/input_files:ro',
-        '      - /vagrant/curious-containers/result_files:/root/result_files',
+        '      - /vagrant/input_files:/root/input_files:ro',
+        '      - /vagrant/result_files:/root/result_files',
         '    tty: true',
         '',
         '  registry:',
@@ -386,31 +413,17 @@ def vagrant(d, output_directory, use_local_data):
     with open(os.path.join(output_directory, experiment_file_name), 'w') as f:
         json.dump(c, f, indent=4)
 
-    addtional_directories = [
-        os.path.join(output_directory, 'curious-containers', 'input_files'),
-        os.path.join(output_directory, 'curious-containers', 'result_files'),
-        os.path.join(output_directory, 'curious-containers', 'logs')
-    ]
+    directories = {
+        'input_files': os.path.join(output_directory, 'input_files'),
+        'result_files': os.path.join(output_directory, 'result_files'),
+        'logs': os.path.join(output_directory, 'curious-containers', 'logs')
+    }
 
-    for directory in addtional_directories:
+    for _, directory in directories.items():
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    user_text = [
-        '',
-        'Change to the output directory and run:',
-        '',
-        'vagrant up --provider virtualbox',
-        '',
-        'This will start a virtual machine, containing the Curious Containers execution engine. Vagrant and VirtualBox '
-        'are required beforehand.',
-        '',
-        'Go to the following address in a browser to access a graphical user interface:',
-        '',
-        'http://localhost:{}'.format(cc_host_port),
-        'username: user',
-        'password: PASSWORD'
-    ]
+    user_text = []
 
     if use_local_data:
         user_text += [
@@ -422,7 +435,7 @@ def vagrant(d, output_directory, use_local_data):
         input_files_meta = c['meta_data']['input_files']
         for i, input_file in enumerate(input_files_meta):
             file_name = 'file_{}'.format(i+1)
-            file_path = os.path.join(output_directory, 'curious-containers', 'input_files', file_name)
+            file_path = os.path.join(directories['input_files'], file_name)
             description = input_file['description']
             user_text += [
                 '',
@@ -430,13 +443,25 @@ def vagrant(d, output_directory, use_local_data):
                 'file location: {}'.format(file_path),
             ]
 
-        result_file_directory = os.path.join(output_directory, 'curious-containers', 'result_files')
         user_text += [
             '',
-            'When running the experiment, resulting files will be written to {}'.format(result_file_directory)
+            'The result files will be written to the {} directory'.format(directories['result_files'])
         ]
 
     user_text += [
+        '',
+        'Change to the {} directory and run:'.format(output_directory),
+        '',
+        'vagrant up --provider virtualbox',
+        '',
+        'This will start a virtual machine, containing the Curious Containers execution engine. Vagrant and VirtualBox '
+        'are required beforehand.',
+        '',
+        'Go to the following address in a browser to access a graphical user interface:',
+        '',
+        'http://localhost:{}'.format(cc_host_port),
+        'username: user',
+        'password: PASSWORD',
         '',
         'In order to run the experiment in the virtual machine use faice as follows:',
         '',

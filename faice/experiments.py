@@ -10,36 +10,28 @@ from faice.helpers import print_user_text
 
 
 def validate_experiment(d):
-    user_text_error = []
     try:
         jsonschema.validate(d, experiment_schema)
         jsonschema.validate(d, experiment_schema_1)
         engine = get_engine(d)
 
-        validated = engine.validate_engine_config(d)
-        if not validated:
-            user_text_error.append('Engine config schema could not be validated.')
-
-        validated = engine.validate_instructions(d)
-        if not validated:
-            user_text_error.append('Instructions schema could not be validated.')
-
-        print_user_text(user_text_error, error=True)
+        engine.validate_engine_config(d)
+        engine.validate_instructions(d)
+        engine.validate_meta_data(d)
     except:
+        print(file=sys.stderr)
         print(format_exc(), file=sys.stderr)
-        if user_text_error:
-            user_text_error.append('')
-        user_text_error.append('Experiment validation failed. Examine the exception output above for details.')
 
-        print_user_text(user_text_error, error=True)
+        print_user_text([
+            '',
+            'Experiment validation failed. Examine the exception output above for details.'
+        ], error=True)
         exit(1)
 
-    user_text = []
-    if user_text_error:
-        user_text.append('')
-    user_text.append('Experiment validation successful.')
-
-    print_user_text(user_text)
+    print_user_text([
+        '',
+        'Experiment validation successful.'
+    ])
 
 
 def write_experiment_file(d, experiment_file):
