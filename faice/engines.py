@@ -1,8 +1,9 @@
-from faice.execution_engines import curious_containers
+from faice.execution_engines import curious_containers, common_workflow_language
 
 
 ENGINES = {
-    'curious-containers': curious_containers
+    'curious-containers': curious_containers,
+    'common-workflow-engine': common_workflow_language
 }
 
 
