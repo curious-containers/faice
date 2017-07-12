@@ -6,7 +6,7 @@ descriptions_array_schema = {
             'description': {'type': 'string'},
             'is_optional': {'type': 'boolean'},
         },
-        'required': ['description', 'is_optional'],
+        'required': ['description'],
         'addtionalProperties': False
     }
 }
@@ -20,7 +20,7 @@ descriptions_object_schema = {
                 'description': {'type': 'string'},
                 'is_optional': {'type': 'boolean'}
             },
-            'required': ['description', 'is_optional'],
+            'required': ['description'],
             'additionalProperties': False
         }
     },

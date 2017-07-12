@@ -27,5 +27,5 @@ setup(
     },
     license='GPL-3.0',
     platforms=['any'],
-    install_requires=['jinja2', 'requests', 'jsonschema', 'ruamel.yaml']
+    install_requires=['jinja2', 'requests', 'jsonschema', 'pyyaml']
 )
