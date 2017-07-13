@@ -13,6 +13,24 @@ Make sure to use the Python 3 version of pip, usually referred to as pip3.
 pip3 install --user faice
 ```
 
+Also note, that an executable faice script will be generated during the installation process. The directory in which
+the script resides, must be included in the PATH environment variable.
+
+Run `faice` in a terminal to see if the program can be executed. Otherwise the appropriate directory, which may vary
+from platform to platform, must be added manually.
+
+Example directory for windows:
+
+```
+C:\Users\Admin\AppData\Roaming\Python\Python36\Scripts\
+```
+
+Example directory for linux: 
+
+```
+~/.local/bin/
+```
+
 ## Usage
 
 FAICE provides various tools via a common command line interface. The help commands `faice ${tool} -h`
