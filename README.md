@@ -40,7 +40,7 @@ python3 -m faice
 ## Usage
 
 FAICE provides various tools via a common command line interface. The help commands `faice ${tool} -h`
-provide additional information about each tool.
+shows additional information about each tool.
 
 ```bash
 # list available tools
