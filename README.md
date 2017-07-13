@@ -31,6 +31,12 @@ Example directory for linux:
 ~/.local/bin/
 ```
 
+Instead of altering the PATH environment variable the program can be executed as follows:
+
+```
+python3 -m faice
+```
+
 ## Usage
 
 FAICE provides various tools via a common command line interface. The help commands `faice ${tool} -h`
