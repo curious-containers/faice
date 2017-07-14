@@ -1,5 +1,4 @@
 import os
-import sys
 from argparse import ArgumentParser
 
 from faice.helpers import load_local, load_url, print_user_text
@@ -56,9 +55,11 @@ def main():
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     elif not os.path.isdir(output_directory):
-        user_text = ['specified output-directory path already exists, but is not a directory']
-        print_user_text(user_text, error=True)
-        sys.exit(1)
+        print_user_text([
+            '',
+            'ERROR: Specified output-directory path already exists, but is not a directory.'
+        ], error=True)
+        exit(1)
 
     engine.vagrant(d, output_directory=output_directory, use_local_data=args.use_local_data)
 

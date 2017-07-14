@@ -6,32 +6,18 @@ from traceback import format_exc
 
 from faice.schemas import experiment_schema, experiment_schema_1
 from faice.engines import get_engine
-from faice.helpers import print_user_text
+from faice.helpers import print_user_text, graceful_exception
 
 
+@graceful_exception('Experiment format is invalid.')
 def validate_experiment(d):
-    try:
-        jsonschema.validate(d, experiment_schema)
-        jsonschema.validate(d, experiment_schema_1)
-        engine = get_engine(d)
+    jsonschema.validate(d, experiment_schema)
+    jsonschema.validate(d, experiment_schema_1)
+    engine = get_engine(d)
 
-        engine.validate_engine_config(d)
-        engine.validate_instructions(d)
-        engine.validate_meta_data(d)
-    except:
-        print(file=sys.stderr)
-        print(format_exc(), file=sys.stderr)
-
-        print_user_text([
-            '',
-            'Experiment validation failed. Examine the exception output above for details.'
-        ], error=True)
-        exit(1)
-
-    print_user_text([
-        '',
-        'Experiment validation successful.'
-    ])
+    engine.validate_engine_config(d)
+    engine.validate_instructions(d)
+    engine.validate_meta_data(d)
 
 
 def write_experiment_file(d, experiment_file):

@@ -1,4 +1,3 @@
-import json
 from argparse import ArgumentParser
 
 from faice.helpers import load_local, load_url

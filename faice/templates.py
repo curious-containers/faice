@@ -3,9 +3,10 @@ import json
 from copy import deepcopy
 from jinja2 import Template, Environment, meta
 
-from faice.helpers import print_user_text
+from faice.helpers import print_user_text, graceful_exception
 
 
+@graceful_exception('Could not parse experiment file.')
 def parse(template, non_interactive=False):
     variables = _find_variables(template)
     if variables:
@@ -18,7 +19,9 @@ def parse(template, non_interactive=False):
                 'The given experiment file contains undeclared variables. Variables are usually used to replace '
                 'secret credentials for online services like an execution engine or data repositories. If any of these '
                 'credentials are unknown, it might not be possible to run the experiment. Online services can be '
-                'avoided by using the "faice vagrant" tool to run a local virtual machine.',
+                'avoided by using "faice vagrant".',
+                '',
+                'Set variables...',
                 ''
             ])
             inputs = {}
@@ -40,7 +43,7 @@ def _find_variables(template):
 def _fill_template(template, variables, inputs):
     c = deepcopy(inputs)
     for variable in variables:
-        if variable not in c:
-            c[variables] = None
+        if not c.get(variable):
+            c[variable] = 'null'
     t = Template(template)
     return t.render(c)
