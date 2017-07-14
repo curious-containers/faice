@@ -48,16 +48,6 @@ faice
 ```
 
 ```bash
-# parse experiment template to fill in undeclared variables
-faice parse -h
-```
-
-```bash
-# validate an experiment description with json schemas built into faice
-faice validate -h
-```
-
-```bash
 # run the specified experiment in an execution engine
 faice run -h
 ```

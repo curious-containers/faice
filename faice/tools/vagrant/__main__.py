@@ -1,11 +1,11 @@
 import os
 import sys
-import json
 from argparse import ArgumentParser
 
 from faice.helpers import load_local, load_url, print_user_text
 from faice.experiments import validate_experiment
 from faice.engines import get_engine
+from faice.templates import parse
 
 
 def main():
@@ -34,7 +34,23 @@ def main():
              'to local references in the generated experiment.json file'
     )
 
+    parser.add_argument(
+        '-n', '--non-interactive', dest='non_interactive', action='store_true',
+        help='do not provide an interactive cli prompt to set undeclared variables and instead load a JSON '
+             'document containing the variables with their respective values via stdin'
+    )
+
     args = parser.parse_args()
+
+    experiment = None
+    if args.experiment_file:
+        experiment = load_local(args.experiment_file)
+    elif args.experiment_url:
+        experiment = load_url(args.experiment_url)
+
+    d = parse(experiment, non_interactive=args.non_interactive)
+    validate_experiment(d)
+    engine = get_engine(d)
 
     output_directory = os.path.expanduser(args.output_directory)
     if not os.path.exists(output_directory):
@@ -44,16 +60,6 @@ def main():
         print_user_text(user_text, error=True)
         sys.exit(1)
 
-    d = None
-    if args.experiment_file:
-        raw = load_local(args.experiment_file)
-        d = json.loads(raw)
-    elif args.experiment_url:
-        raw = load_url(args.experiment_url)
-        d = json.loads(raw)
-
-    validate_experiment(d)
-    engine = get_engine(d)
     engine.vagrant(d, output_directory=output_directory, use_local_data=args.use_local_data)
 
 

@@ -2,18 +2,14 @@ import os
 import sys
 from collections import OrderedDict
 
-from faice.tools.parse.__main__ import main as parse_main
 from faice.tools.run.__main__ import main as run_main
-from faice.tools.validate.__main__ import main as validate_main
 from faice.tools.vagrant.__main__ import main as vagrant_main
 from faice.helpers import print_user_text
 
 
 TOOLS = OrderedDict([
-    ('parse', parse_main),
-    ('validate', validate_main),
-    ('vagrant', vagrant_main),
-    ('run', run_main)
+    ('run', run_main),
+    ('vagrant', vagrant_main)
 ])
 
 

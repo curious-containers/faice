@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from faice.helpers import load_local, load_url
 from faice.experiments import validate_experiment
 from faice.engines import get_engine
+from faice.templates import parse
 
 
 def main():
@@ -21,16 +22,21 @@ def main():
         help='read experiment from local FILE'
     )
 
+    parser.add_argument(
+        '-n', '--non-interactive', dest='non_interactive', action='store_true',
+        help='do not provide an interactive cli prompt to set undeclared variables and instead load a JSON '
+             'document containing the variables with their respective values via stdin'
+    )
+
     args = parser.parse_args()
 
-    d = None
+    experiment = None
     if args.experiment_file:
-        raw = load_local(args.experiment_file)
-        d = json.loads(raw)
+        experiment = load_local(args.experiment_file)
     elif args.experiment_url:
-        raw = load_url(args.experiment_url)
-        d = json.loads(raw)
+        experiment = load_url(args.experiment_url)
 
+    d = parse(experiment, non_interactive=args.non_interactive)
     validate_experiment(d)
     engine = get_engine(d)
     engine.run(d)
