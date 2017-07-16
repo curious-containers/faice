@@ -23,12 +23,12 @@ def _graceful_exception(error_text):
     return dec
 
 
-@_graceful_exception('Could not load experiment file.')
+@_graceful_exception('Could not read file.')
 def load_local(file_path):
     return resources.load_local(file_path)
 
 
-@_graceful_exception('Could not load experiment file from URL.')
+@_graceful_exception('Could not load file from URL.')
 def load_url(url):
     return resources.load_url(url)
 
