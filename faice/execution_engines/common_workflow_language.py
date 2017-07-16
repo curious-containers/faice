@@ -3,7 +3,7 @@ import yaml
 import jsonschema
 from copy import deepcopy
 
-from faice.helpers import print_user_text, load_url, load_local, graceful_exception
+from faice.helpers import print_user_text, load_url, load_local
 from faice.schemas import src_code_schema
 
 _engine_config_schema = {
@@ -110,12 +110,10 @@ def validate_meta_data(d):
 
 
 def run(d):
-    print_user_text([
-        '',
-        'ERROR: The "faice run" tool is not available with the common-workflow-language execution engine. Try using '
-        '"faice vagrant" instead.'
-    ], error=True)
-    exit(1)
+    raise Exception(
+        'The "faice run" tool is not available with the common-workflow-language execution engine. '
+        'Try using "faice vagrant" instead.'
+    )
 
 
 def _adapt_for_vagrant(cwl_input_yaml):
@@ -128,7 +126,6 @@ def _adapt_for_vagrant(cwl_input_yaml):
     return c
 
 
-@graceful_exception('Could not setup vagrant.')
 def vagrant(d, output_directory, use_local_data):
     engine_config = d['execution_engine']['engine_config']
 

@@ -127,7 +127,6 @@ def validate_meta_data(d):
             )
 
 
-@graceful_exception('Could not run experiment.')
 def run(d):
     engine_config = d['execution_engine']['engine_config']
     instructions = d['instructions']
@@ -192,7 +191,6 @@ def _adapt_for_vagrant(d, port, use_local_data):
     return c
 
 
-@graceful_exception('Could not setup vagrant.')
 def vagrant(d, output_directory, use_local_data):
     engine_config = d['execution_engine']['engine_config']
 

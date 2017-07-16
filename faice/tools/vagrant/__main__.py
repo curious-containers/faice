@@ -2,8 +2,8 @@ import os
 from argparse import ArgumentParser
 
 from faice.helpers import load_local, load_url, print_user_text
-from faice.experiments import validate_experiment
-from faice.engines import get_engine
+from faice.experiments import validate
+from faice.engines import vagrant
 from faice.templates import parse
 
 
@@ -48,8 +48,7 @@ def main():
         experiment = load_url(args.experiment_url)
 
     d = parse(experiment, non_interactive=args.non_interactive)
-    validate_experiment(d)
-    engine = get_engine(d)
+    validate(d)
 
     output_directory = os.path.expanduser(args.output_directory)
     if not os.path.exists(output_directory):
@@ -61,7 +60,7 @@ def main():
         ], error=True)
         exit(1)
 
-    engine.vagrant(d, output_directory=output_directory, use_local_data=args.use_local_data)
+    vagrant(d, output_directory=output_directory, use_local_data=args.use_local_data)
 
 
 if __name__ == '__main__':

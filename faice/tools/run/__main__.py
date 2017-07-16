@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
 
 from faice.helpers import load_local, load_url
-from faice.experiments import validate_experiment
-from faice.engines import get_engine
+from faice.experiments import validate
+from faice.engines import run
 from faice.templates import parse
 
 
@@ -36,9 +36,8 @@ def main():
         experiment = load_url(args.experiment_url)
 
     d = parse(experiment, non_interactive=args.non_interactive)
-    validate_experiment(d)
-    engine = get_engine(d)
-    engine.run(d)
+    validate(d)
+    run(d)
 
 
 if __name__ == '__main__':
