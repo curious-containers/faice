@@ -3,7 +3,8 @@ import yaml
 import jsonschema
 from copy import deepcopy
 
-from faice.helpers import print_user_text, load_url, load_local
+from faice.resources import load_local, load_url
+from faice.helpers import print_user_text
 from faice.schemas import src_code_schema
 
 _engine_config_schema = {

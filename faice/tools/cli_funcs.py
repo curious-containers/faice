@@ -33,11 +33,6 @@ def load_url(url):
     return resources.load_url(url)
 
 
-@_graceful_exception('Could not find a free network port.')
-def find_open_port():
-    return resources.find_open_port()
-
-
 @_graceful_exception('Could not run experiment.')
 def run(d):
     engines.run(d)

@@ -5,7 +5,8 @@ import jsonschema
 from copy import deepcopy
 from pprint import pprint
 
-from faice.helpers import find_open_port, print_user_text, graceful_exception
+from faice.helpers import print_user_text
+from faice.resources import find_open_port
 from faice.schemas import src_code_schema, descriptions_array_schema, descriptions_object_schema
 
 
