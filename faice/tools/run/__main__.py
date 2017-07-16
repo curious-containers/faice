@@ -1,9 +1,6 @@
 from argparse import ArgumentParser
 
-from faice.helpers import load_local, load_url
-from faice.experiments import validate
-from faice.engines import run
-from faice.templates import parse
+from faice.tools.cli_funcs import load_url, load_local, validate, parse, run
 
 
 def main():

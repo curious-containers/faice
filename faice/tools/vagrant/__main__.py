@@ -1,10 +1,8 @@
 import os
 from argparse import ArgumentParser
 
-from faice.helpers import load_local, load_url, print_user_text
-from faice.experiments import validate
-from faice.engines import vagrant
-from faice.templates import parse
+from faice.helpers import print_user_text
+from faice.tools.cli_funcs import load_url, load_local, validate, parse, vagrant
 
 
 def main():

@@ -4,10 +4,8 @@ import jsonschema
 
 from faice.schemas import experiment_schema, experiment_schema_1
 from faice.engines import get_engine
-from faice.helpers import graceful_exception
 
 
-@graceful_exception('Experiment format is invalid.')
 def validate(d):
     jsonschema.validate(d, experiment_schema)
     jsonschema.validate(d, experiment_schema_1)

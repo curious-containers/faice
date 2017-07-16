@@ -3,10 +3,9 @@ import json
 from copy import deepcopy
 from jinja2 import Template, Environment, meta
 
-from faice.helpers import print_user_text, graceful_exception
+from faice.helpers import print_user_text
 
 
-@graceful_exception('Could not parse experiment file.')
 def parse(template, non_interactive=False):
     variables = _find_variables(template)
     if variables:
