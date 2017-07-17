@@ -5,7 +5,7 @@ import jsonschema
 from copy import deepcopy
 from pprint import pprint
 
-from faice.helpers import print_user_text
+from faice.helpers import print_user_text, Stepper
 from faice.resources import find_open_port
 from faice.schemas import src_code_schema, descriptions_array_schema, descriptions_object_schema
 
@@ -424,13 +424,14 @@ def vagrant(d, output_directory, use_local_data):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
+    s = Stepper()
     user_text = []
 
     if use_local_data:
         user_text += [
             '',
-            'The option --use-local-data has been set. It is required, that the input files listed below are copied '
-            'to the appropriate file system locations before running the experiment:'
+            'STEP {}: The option --use-local-data has been set. It is required, that the input files listed below '
+            'are copied to the appropriate file system locations before running the experiment:'.format(s.step())
         ]
 
         input_files_meta = c['meta_data']['input_files']
@@ -451,22 +452,24 @@ def vagrant(d, output_directory, use_local_data):
 
     user_text += [
         '',
-        'Change to the {} directory and run:'.format(output_directory),
+        'STEP {}: Change to the {} directory and run:'.format(s.step(), output_directory),
         '',
         'vagrant up --provider virtualbox',
         '',
         'This will start a virtual machine, containing the Curious Containers execution engine. Vagrant and VirtualBox '
         'are required beforehand.',
         '',
-        'Go to the following address in a browser to access a graphical user interface:',
+        'STEP {}: Run the experiment from the generated JSON file:'.format(s.step()),
+        '',
+        'faice run -f experiment.json',
+        '',
+        'OPTIONAL: Access a graphical user interface to monitor the experiment progress via the following address in '
+        'a browser:',
         '',
         'http://localhost:{}'.format(cc_host_port),
         'username: user',
         'password: PASSWORD',
         '',
-        'In order to run the experiment in the virtual machine use faice as follows:',
-        '',
-        'faice run -f experiment.json'
     ]
 
     print_user_text(user_text)

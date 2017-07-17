@@ -221,8 +221,8 @@ def vagrant(d, output_directory, use_local_data):
 
     user_text += [
         '',
-        'It is required, that the input files listed below are copied to the appropriate file system locations before '
-        'running the experiment:'
+        'STEP 1: It is required, that the input files listed below are copied to the appropriate file system locations '
+        'before running the experiment:'
     ]
 
     for key, val in cwl_input_yaml_copy.items():
@@ -239,7 +239,7 @@ def vagrant(d, output_directory, use_local_data):
         '',
         'The result files will be written to the {} directory'.format(directories['outputs']),
         '',
-        'Change to the {} directory and run:'.format(output_directory),
+        'STEP 2: Change to the {} directory and run:'.format(output_directory),
         '',
         'vagrant up --provider virtualbox',
         '',

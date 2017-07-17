@@ -2,13 +2,12 @@ import os
 import json
 import jsonschema
 
-from faice.schemas import experiment_schema, experiment_schema_1
+from faice.schemas import experiment_schema
 from faice.engines import get_engine
 
 
 def validate(d):
     jsonschema.validate(d, experiment_schema)
-    jsonschema.validate(d, experiment_schema_1)
     engine = get_engine(d)
 
     engine.validate_engine_config(d)

@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='faice',
-    version='0.5',
+    version='0.6',
     summary='FAICE (Fair Collaboration and Experiments) is a tool suite, helping researchers to work with experiments '
             'published in the FAICE description format.',
     description='FAICE (Fair Collaboration and Experiments) is a tool suite, helping researchers to work with '
@@ -17,10 +17,8 @@ setup(
         'faice',
         'faice.execution_engines',
         'faice.tools',
-        'faice.tools.parse',
         'faice.tools.run',
         'faice.tools.vagrant',
-        'faice.tools.validate'
     ],
     entry_points={
         'console_scripts': ['faice=faice.__main__:main']

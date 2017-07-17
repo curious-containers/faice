@@ -40,10 +40,10 @@ src_code_schema = {
     'additionalProperties': False
 }
 
-experiment_schema_1 = {
+experiment_schema = {
     'type': 'object',
     'properties': {
-        'format_version': {},
+        'format_version': {'enum': ['1']},
         'execution_engine': {
             'type': 'object',
             'properties': {
@@ -58,13 +58,4 @@ experiment_schema_1 = {
     },
     'required': ['format_version', 'execution_engine', 'instructions', 'meta_data'],
     'additionalProperties': False
-}
-
-experiment_schema = {
-    'type': 'object',
-    'properties': {
-        'format_version': {'enum': ['1']}
-    },
-    'required': ['format_version'],
-    'additionalProperties': True
 }
