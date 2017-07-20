@@ -14,7 +14,7 @@ pip3 install --user faice
 ```
 
 Also note, that an executable `faice` script will be generated during the installation process. The directory in which
-the script resides, should be included in the PATH environment variable.
+the script resides, should be included in the `PATH` environment variable.
 
 Run `faice` in a terminal to see if the program can be executed. Otherwise the appropriate directory, which may vary
 from platform to platform, must be added manually.
@@ -62,7 +62,7 @@ The access to the resources may be restricted and require authentication.
 ### Experiment
 
 An experiment is a formal description of a program and how to invoke it with certain input files and parameters.
-The experiment desciption can be redistributed to other researchers or published on a website (e.g. github), such that
+The experiment description can be redistributed to other researchers or published on a website (e.g. github), such that
 results are easily reproducible with the `faice` CLI tools.
 
 FAICE experiments are JSON files, which may contain sensitive information like credentials for remote data storage or an
