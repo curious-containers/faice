@@ -19,13 +19,19 @@ the script resides, should be included in the PATH environment variable.
 Run `faice` in a terminal to see if the program can be executed. Otherwise the appropriate directory, which may vary
 from platform to platform, must be added manually.
 
-Example directory for windows:
+Example directory for Windows:
 
 ```
 C:\Users\Admin\AppData\Roaming\Python\Python36\Scripts\
 ```
 
-Example directory for linux: 
+Example directory for Mac:
+
+```
+~/Library/Python/3.6/bin/
+```
+
+Example directory for Linux: 
 
 ```
 ~/.local/bin/

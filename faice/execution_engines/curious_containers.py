@@ -26,7 +26,7 @@ _engine_config_schema = {
         'install_requirements': {
             'type': 'object',
             'properties': {
-                'cc_server_version': {'type': 'string'}
+                'cc_server_version': {'enum': ['0.12']}
             },
             'required': ['cc_server_version'],
             'additionalProperties': False
@@ -148,13 +148,13 @@ def run(d):
     pprint(data)
 
 
-def _adapt_for_vagrant(d, port, use_local_data):
+def _adapt_for_vagrant(d, port, username, password, use_local_data):
     c = deepcopy(d)
 
     c['execution_engine']['engine_config']['url'] = 'http://localhost:{}/cc'.format(port)
     c['execution_engine']['engine_config']['auth'] = {
-        'username': 'user',
-        'password': 'PASSWORD'
+        'username': username,
+        'password': password
     }
 
     if use_local_data:
@@ -198,6 +198,8 @@ def vagrant(d, output_directory, use_local_data):
     cc_server_version = engine_config['install_requirements']['cc_server_version']
     docker_compose_version = '1.14.0'
 
+    cc_username = 'ccuser'
+    cc_password = 'ccpass'
     cc_host_port = find_open_port()
     cc_guest_port = 80
     vm_memory = 4096
@@ -211,6 +213,7 @@ def vagrant(d, output_directory, use_local_data):
     compose_file_name = 'docker-compose.yml'
     experiment_file_name = 'experiment.json'
     apache_file_name = 'cc-server.conf'
+    credentials_file_name = 'cc-credentials.json'
 
     vagrant_file_lines = [
         'VAGRANTFILE_API_VERSION = "2"',
@@ -234,7 +237,7 @@ def vagrant(d, output_directory, use_local_data):
         '#!/usr/bin/env bash',
         '',
         'apt-get update',
-        'apt-get install -y curl git docker.io apache2',
+        'apt-get install -y curl git docker.io apache2 python3-pip',
         '',
         '# docker and docker-compose',
         'usermod -aG docker {}'.format(vm_user),
@@ -245,11 +248,10 @@ def vagrant(d, output_directory, use_local_data):
         '# cc-server',
         'cd ~',
         'git clone -b {} --depth 1 https://github.com/curious-containers/cc-server.git'.format(cc_server_version),
-        'cd ~/cc-server',
-        'cp /vagrant/{} ./compose'.format(compose_file_name),
-        'cp compose/config_samples/config.toml compose',
-        'cp compose/config_samples/credentials.toml compose',
-        'bash compose/scripts/create_systemd_unit_file -d $(pwd)',
+        'cd cc-server/compose',
+        'cp /vagrant/{} .'.format(compose_file_name),
+        'cp config_samples/config.toml .',
+        'bash bin/cc-create-systemd-unit-file -d $(pwd)',
         'systemctl enable cc-server',
         'systemctl start cc-server',
         '',
@@ -273,13 +275,21 @@ def vagrant(d, output_directory, use_local_data):
         'a2ensite cc-server',
         'systemctl restart apache2',
         '',
+        'cd ~/cc-server',
+        'pip3 install --user --upgrade -r requirements.txt',
+        '',
         'echo',
         'echo setup successful',
         'echo "waiting for Curious Containers to finish initialization..."',
-        'for i in {1..30}; do',
+        'for i in {1..60}; do',
         '    http_code=$(curl -sL -w "%{http_code}" http://localhost:8000/ -o /dev/null)',
         '    if [ "${http_code}" == "200" ]; then',
-        '        echo "initialization successfull"',
+        '        cat /vagrant/{} | ~/cc-server/bin/cc-create-user-non-interactive -f ~/cc-server/compose/config.toml '
+        '-m localhost'.format(credentials_file_name),
+        '        echo "initialization successful"',
+        '        echo',
+        '        echo Run the experiment from the generated JSON file:',
+        '        echo faice run -f experiment.json',
         '        exit 0',
         '    fi',
         '    sleep 10',
@@ -295,13 +305,12 @@ def vagrant(d, output_directory, use_local_data):
         'services:',
         '  cc-server-web:',
         '    build: ./cc-server-image',
-        '    command: "python3 -u /root/.config/curious-containers/cc-server-web/init.py"',
+        '    command: "python3 -u -m cc_server.web_service"',
         '    ports:',
         '      - "8000:8000"',
         '    volumes:',
-        '      - ../cc_server_web:/opt/cc_server_web:ro',
-        '      - ../cc_commons:/opt/cc_commons:ro',
-        '      - .:/root/.config/curious-containers:ro',
+        '      - ./config.toml:/root/.config/cc-server/config.toml:ro',
+        '      - ../cc_server:/opt/cc_server:ro',
         '    links:',
         '      - mongo',
         '      - cc-server-master',
@@ -310,11 +319,10 @@ def vagrant(d, output_directory, use_local_data):
         '',
         '  cc-server-master:',
         '    build: ./cc-server-image',
-        '    command: "python3 -u /root/.config/curious-containers/cc-server-master/init.py"',
+        '    command: "python3 -u -m cc_server.master_service"',
         '    volumes:',
-        '      - ../cc_server_master:/opt/cc_server_master:ro',
-        '      - ../cc_commons:/opt/cc_commons:ro',
-        '      - .:/root/.config/curious-containers:ro',
+        '      - ./config.toml:/root/.config/cc-server/config.toml:ro',
+        '      - ../cc_server:/opt/cc_server:ro',
         '    links:',
         '      - mongo',
         '      - dind',
@@ -325,11 +333,10 @@ def vagrant(d, output_directory, use_local_data):
         '',
         '  cc-server-log:',
         '    build: ./cc-server-image',
-        '    command: "python3 -u /opt/cc_server_log"',
+        '    command: "python3 -u -m cc_server.log_service"',
         '    volumes:',
-        '      - ../cc_server_log:/opt/cc_server_log:ro',
-        '      - ../cc_commons:/opt/cc_commons:ro',
-        '      - .:/root/.config/curious-containers:ro',
+        '      - ./config.toml:/root/.config/cc-server/config.toml:ro',
+        '      - ../cc_server:/opt/cc_server:ro',
         '      - /vagrant/curious-containers/logs:/root/.cc_server/logs',
         '    tty: true',
         '',
@@ -338,14 +345,15 @@ def vagrant(d, output_directory, use_local_data):
         '    ports:',
         '      - "27017:27017"',
         '    volumes:',
-        '      - /root/curious-containers/mongo/db:/data/db',
+        '      - /root/.cc_server_compose/mongo/db:/data/db',
         '    tty: true',
         '',
         '  mongo-seed:',
         '    build: ./mongo-seed',
         '    volumes:',
-        '      - .:/root/.config/curious-containers',
-        '    command: "python3 -u /root/.config/curious-containers/mongo-seed/init.py"',
+        '      - ./config.toml:/root/.config/cc-server/config.toml:ro',
+        '      - ./mongo-seed/mongo_seed:/opt/mongo_seed',
+        '    command: "python3 -u -m mongo_seed"',
         '    links:',
         '      - mongo',
         '    tty: true',
@@ -355,7 +363,7 @@ def vagrant(d, output_directory, use_local_data):
         '    privileged: true',
         '    command: "dockerd --insecure-registry=registry:5000 -H tcp://0.0.0.0:2375"',
         '    volumes:',
-        '      - /root/curious-containers/dind/docker:/var/lib/docker',
+        '      - /root/.cc_server_compose/dind/docker:/var/lib/docker',
         '    links:',
         '      - registry',
         '      - file-server',
@@ -379,7 +387,7 @@ def vagrant(d, output_directory, use_local_data):
         '    environment:',
         '      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data',
         '    volumes:',
-        '    - /root/curious-containers/registry/data:/data',
+        '    - /root/.cc_server_compose/registry/data:/data',
         ''
     ]
 
@@ -410,9 +418,19 @@ def vagrant(d, output_directory, use_local_data):
         with open(file_path, 'w') as f:
             f.write(file_content)
 
-    c = _adapt_for_vagrant(d, port=cc_host_port, use_local_data=use_local_data)
+    c = _adapt_for_vagrant(
+        d, port=cc_host_port, username=cc_username, password=cc_password, use_local_data=use_local_data
+    )
     with open(os.path.join(output_directory, experiment_file_name), 'w') as f:
         json.dump(c, f, indent=4)
+
+    credentials = {
+        'username': cc_username,
+        'password': cc_password,
+        'is_admin': True
+    }
+    with open(os.path.join(output_directory, credentials_file_name), 'w') as f:
+        json.dump(credentials, f, indent=4)
 
     directories = {
         'input_files': os.path.join(output_directory, 'input_files'),
@@ -467,8 +485,8 @@ def vagrant(d, output_directory, use_local_data):
         'a browser:',
         '',
         'http://localhost:{}'.format(cc_host_port),
-        'username: user',
-        'password: PASSWORD',
+        'username: {}'.format(cc_username),
+        'password: {}'.format(cc_password),
         '',
     ]
 
