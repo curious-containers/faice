@@ -284,8 +284,8 @@ def vagrant(d, output_directory, use_local_data):
         'for i in {1..60}; do',
         '    http_code=$(curl -sL -w "%{http_code}" http://localhost:8000/ -o /dev/null)',
         '    if [ "${http_code}" == "200" ]; then',
-        '        cat /vagrant/{} | ~/cc-server/bin/cc-create-user-non-interactive -f ~/cc-server/compose/config.toml '
-        '-m localhost'.format(credentials_file_name),
+        '        cat /vagrant/{} | ~/cc-server/bin/cc-create-user-non-interactive '
+        '-f ~/cc-server/compose/config/cc-server/config.toml -m localhost'.format(credentials_file_name),
         '        echo "initialization successful"',
         '        echo',
         '        echo Run the experiment from the generated JSON file:',
@@ -371,7 +371,7 @@ def vagrant(d, output_directory, use_local_data):
         '',
         '  file-server:',
         '    build: ./cc-server-image',
-        '    command: "gunicorn -w 4 -b 0.0.0.0:6000 file_server.__main__:app"',
+        '    command: "/root/.local/bin/gunicorn -w 1 -b 0.0.0.0:6000 file_server.__main__:app"',
         '    ports:',
         '      - "6000:6000"',
         '    volumes:',
