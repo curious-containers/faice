@@ -23,43 +23,36 @@ _engine_config_schema = {
     'additionalProperties': False
 }
 
+_yaml_reference_schema = {
+    'oneOf': [{
+        'type': 'object',
+        'properties': {
+            'url': {'type': 'string'}
+        },
+        'required': ['url'],
+        'additionalProperties': False
+    }, {
+        'type': 'object',
+        'properties': {
+            'path': {'type': 'string'}
+        },
+        'required': ['path'],
+        'additionalProperties': False
+    }, {
+        'type': 'object',
+        'properties': {
+            'yaml': {'type': 'string'}
+        },
+        'required': ['yaml'],
+        'additionalProperties': False
+    }]
+}
+
 _instructions_schema = {
     'type': 'object',
     'properties': {
-        'cwl_file': {
-            'oneOf': [{
-                'type': 'object',
-                'properties': {
-                    'url': {'type': 'string'}
-                },
-                'required': ['url'],
-                'additionalProperties': False
-            }, {
-                'type': 'object',
-                'properties': {
-                    'path': {'type': 'string'}
-                },
-                'required': ['path'],
-                'additionalProperties': False
-            }]
-        },
-        'cwl_input_file': {
-            'oneOf': [{
-                'type': 'object',
-                'properties': {
-                    'url': {'type': 'string'}
-                },
-                'required': ['url'],
-                'additionalProperties': False
-            }, {
-                'type': 'object',
-                'properties': {
-                    'path': {'type': 'string'}
-                },
-                'required': ['path'],
-                'additionalProperties': False
-            }]
-        }
+        'cwl_file': _yaml_reference_schema,
+        'cwl_input_file': _yaml_reference_schema
     },
     'required': ['cwl_file', 'cwl_input_file'],
     'additionalProperties': False
@@ -72,6 +65,34 @@ _meta_data_schema = {
             'type': 'object',
             'patternProperties': {
                 '^[a-zA-Z0-9.:/-]+$': src_code_schema
+            },
+            'additionalProperties': False
+        },
+        'input_files': {
+            'type': 'object',
+            'patternProperties': {
+                '^[a-zA-Z0-9._-]+$': {
+                    'type': 'object',
+                    'properties': {
+                        'file_extension_preference': {'type': 'string'}
+                    },
+                    'required': ['file_extension_preference'],
+                    'additionalProperties': False
+                }
+            },
+            'additionalProperties': False
+        },
+        'output_files': {
+            'type': 'object',
+            'patternProperties': {
+                '^[a-zA-Z0-9._-]+$': {
+                    'type': 'object',
+                    'properties': {
+                        'file_extension_preference': {'type': 'string'}
+                    },
+                    'required': ['file_extension_preference'],
+                    'additionalProperties': False
+                }
             },
             'additionalProperties': False
         }
@@ -92,8 +113,10 @@ def _load_cwl_files(d):
     for file_data in [cwl_file_data, cwl_input_file_data]:
         if file_data.get('url'):
             text = load_url(file_data['url'])
-        else:
+        elif file_data.get('path'):
             text = load_local(file_data['path'])
+        else:
+            text = file_data['yaml']
         yaml_data = yaml.load(text)
         results.append(yaml_data)
     return results
@@ -107,7 +130,27 @@ def validate_instructions(d):
 def validate_meta_data(d):
     meta_data = d['meta_data']
     jsonschema.validate(meta_data, _meta_data_schema)
-    _ = _load_cwl_files(d)
+    cwl_yaml, cwl_input_yaml = _load_cwl_files(d)
+
+    for key, val in cwl_input_yaml.items():
+        if key not in cwl_yaml['inputs']:
+            raise Exception('Key {} from input file not found in cwl file.'.format(key))
+
+    for key, val in cwl_yaml['inputs'].items():
+        if 'File' in val['type']:
+            if key not in meta_data['input_files']:
+                raise Exception(
+                    'Key {} from cwl file inputs does not have a corresponding entry in meta_data input_files.'
+                    ''.format(key)
+                )
+
+    for key, val in cwl_yaml['outputs'].items():
+        if 'File' in val['type']:
+            if key not in meta_data['output_files']:
+                raise Exception(
+                    'Key {} from cwl file outputs does not have a corresponding entry in meta_data output_files.'
+                    ''.format(key)
+                )
 
 
 def run(d):
@@ -117,12 +160,15 @@ def run(d):
     )
 
 
-def _adapt_for_vagrant(cwl_input_yaml):
+def _adapt_for_vagrant(cwl_input_yaml, meta_data):
     c = deepcopy(cwl_input_yaml)
 
     for key, val in c.items():
         if isinstance(val, dict) and val['class'] == 'File':
-            val['path'] = '/vagrant/inputs/{}'.format(key)
+            val['path'] = '/vagrant/inputs/{}.{}'.format(
+                key,
+                meta_data['input_files'][key]['file_extension_preference']
+            )
 
     return c
 
@@ -194,7 +240,9 @@ def vagrant(d, output_directory, use_local_data):
         with open(file_path, 'w') as f:
             f.write(file_content)
 
-    cwl_input_yaml_copy = _adapt_for_vagrant(cwl_input_yaml)
+    meta_data = d['meta_data']
+
+    cwl_input_yaml_copy = _adapt_for_vagrant(cwl_input_yaml, meta_data)
     with open(os.path.join(output_directory, cwl_input_file_name), 'w') as f:
         yaml.dump(cwl_input_yaml_copy, f)
 
@@ -227,12 +275,16 @@ def vagrant(d, output_directory, use_local_data):
 
     for key, val in cwl_input_yaml_copy.items():
         if isinstance(val, dict) and val['class'] == 'File':
-            file_path = os.path.join(directories['inputs'], str(key))
+            file_name = '{}.{}'.format(
+                key,
+                meta_data['input_files'][key]['file_extension_preference']
+            )
+            file_path = os.path.join(directories['inputs'], file_name)
             doc = cwl_yaml['inputs'][key].get('doc')
 
             user_text.append('')
             if doc:
-                user_text.append('file description: {}'.format(doc))
+                user_text.append('file doc: {}'.format(doc))
             user_text.append('file location: {}'.format(file_path))
 
     user_text += [

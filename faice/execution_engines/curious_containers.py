@@ -7,7 +7,7 @@ from pprint import pprint
 
 from faice.helpers import print_user_text, Stepper
 from faice.resources import find_open_port
-from faice.schemas import src_code_schema, descriptions_array_schema, descriptions_object_schema
+from faice.schemas import src_code_schema, doc_array_schema, doc_object_schema
 
 
 _engine_config_schema = {
@@ -46,20 +46,46 @@ _meta_data_schema = {
             },
             'additionalProperties': False
         },
-        'input_files': descriptions_array_schema,
-        'result_files': descriptions_object_schema,
+        'input_files': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'doc': {'type': 'string'},
+                    'file_extension_preference': {'type': 'string'}
+                },
+                'required': ['doc', 'file_extension_preference'],
+                'addtionalProperties': False
+            }
+        },
+        'result_files': {
+            'type': 'object',
+            'patternProperties': {
+                '^[a-zA-Z0-9._-]+$': {
+                    'type': 'object',
+                    'properties': {
+                        'doc': {'type': 'string'},
+                        'is_optional': {'type': 'boolean'},
+                        'file_extension_preference': {'type': 'string'}
+                    },
+                    'required': ['doc', 'is_optional', 'file_extension_preference'],
+                    'additionalProperties': False
+                }
+            },
+            'additionalProperties': False
+        },
         'parameters': {
             'type': 'object',
             'properties': {
                 'is_optional': {'type': 'boolean'},
-                'descriptions': {
+                'docs': {
                     'oneOf': [
-                        descriptions_array_schema,
-                        descriptions_object_schema
+                        doc_array_schema,
+                        doc_object_schema
                     ]
                 }
             },
-            'required': ['descriptions', 'is_optional'],
+            'required': ['docs', 'is_optional'],
             'additionalProperties': False
         }
     },
@@ -112,18 +138,11 @@ def validate_meta_data(d):
             'The number of input_files in instructions must be equals the number of input_files in meta_data'
         )
 
-    for input_file in meta_data['input_files']:
-        if input_file['is_optional']:
-            raise Exception(
-                'input_files in meta_data cannot be marked as optional, because it is not supported by Curious '
-                'Containers.'
-            )
-
     for result_file in instructions['result_files']:
         local_result_file = result_file['local_result_file']
         if local_result_file not in meta_data['result_files']:
             raise Exception(
-                'result_file {} in instructions does not have a corresponding entry in results_files in meta_data.'
+                'Key {} from instructions result_files does not have a corresponding entry in meta_data results_files.'
                 ''.format(local_result_file)
             )
 
@@ -166,7 +185,10 @@ def _adapt_for_vagrant(d, port, username, password, use_local_data):
             for i, input_file in enumerate(task['input_files']):
                 input_file['connector_type'] = 'http'
                 input_file['connector_access'] = {
-                    'url': 'http://172.18.0.1:6000/file_{}'.format(i+1),
+                    'url': 'http://172.18.0.1:6000/{}.{}'.format(
+                        i+1,
+                        c['meta_data']['input_files'][i]['file_extension_preference']
+                    ),
                     'method': 'GET'
                 }
 
@@ -176,17 +198,20 @@ def _adapt_for_vagrant(d, port, username, password, use_local_data):
             tasks = [c['instructions']]
 
         for task in tasks:
-            result_file_names = {result_file['local_result_file'] for result_file in task['result_files']}
+            local_result_files = {result_file['local_result_file'] for result_file in task['result_files']}
             task['result_files'] = [
                 {
-                    'local_result_file': result_file_name,
+                    'local_result_file': local_result_file,
                     'connector_type': 'http',
                     'connector_access': {
-                        'url': 'http://172.18.0.1:6000/{}'.format(result_file_name),
+                        'url': 'http://172.18.0.1:6000/{}.{}'.format(
+                            local_result_file,
+                            c['meta_data']['result_files'][local_result_file]['file_extension_preference']
+                        ),
                         'method': 'POST'
                     }
                 }
-                for result_file_name in result_file_names
+                for local_result_file in local_result_files
             ]
 
     return c
@@ -454,12 +479,15 @@ def vagrant(d, output_directory, use_local_data):
 
         input_files_meta = c['meta_data']['input_files']
         for i, input_file in enumerate(input_files_meta):
-            file_name = 'file_{}'.format(i+1)
+            file_name = '{}.{}'.format(
+                i+1,
+                c['meta_data']['input_files'][i]['file_extension_preference']
+            )
             file_path = os.path.join(directories['input_files'], file_name)
-            description = input_file['description']
+            doc = input_file['doc']
             user_text += [
                 '',
-                'file description: {}'.format(description),
+                'file doc: {}'.format(doc),
                 'file location: {}'.format(file_path),
             ]
 

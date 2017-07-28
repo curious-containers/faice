@@ -1,26 +1,26 @@
-descriptions_array_schema = {
+doc_array_schema = {
     'type': 'array',
     'items': {
         'type': 'object',
         'properties': {
-            'description': {'type': 'string'},
+            'doc': {'type': 'string'},
             'is_optional': {'type': 'boolean'},
         },
-        'required': ['description'],
+        'required': ['doc', 'is_optional'],
         'addtionalProperties': False
     }
 }
 
-descriptions_object_schema = {
+doc_object_schema = {
     'type': 'object',
     'patternProperties': {
         '^[a-zA-Z0-9._-]+$': {
             'type': 'object',
             'properties': {
-                'description': {'type': 'string'},
+                'doc': {'type': 'string'},
                 'is_optional': {'type': 'boolean'}
             },
-            'required': ['description'],
+            'required': ['doc', 'is_optional'],
             'additionalProperties': False
         }
     },
@@ -30,13 +30,13 @@ descriptions_object_schema = {
 src_code_schema = {
     'type': 'object',
     'properties': {
-        'description': {'type': 'string'},
+        'doc': {'type': 'string'},
         'repository_type': {'enum': ['git', 'hg', 'svn', 'cvs', 'bzr']},
         'repository_config': {'type': 'object'},
         'build_type': {'enum': ['docker', 'make', 'cmake', 'script']},
         'build_config': {'type': 'object'}
     },
-    'required': ['description'],
+    'required': ['doc'],
     'additionalProperties': False
 }
 
