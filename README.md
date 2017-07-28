@@ -4,6 +4,8 @@ FAICE (Fair Collaboration and Experiments) is a tool suite, helping researchers 
 the FAICE description format. The FAICE software is developed at [CBMI](https://cbmi.htw-berlin.de/)
 ([HTW Berlin](https://www.htw-berlin.de/) - University of Applied Sciences)
 
+![faice-logo](static/faice.svg)
+
 ## Install
 
 FAICE is a cross-platform software implemented in Python 3 and can be installed via Python's package manager pip.
