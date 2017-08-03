@@ -398,7 +398,6 @@ def vagrant(d, output_directory, use_local_data):
         '    volumes:',
         '      - /root/.cc_server_compose/dind/docker:/var/lib/docker:rw,z',
         '    links:',
-        '      - registry',
         '      - file-server',
         '    tty: true',
         '',
