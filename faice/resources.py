@@ -1,17 +1,24 @@
 import os
 import socket
 import requests
+from urllib.parse import urlparse
 
 
-def load_local(file_path):
-    with open(os.path.expanduser(file_path)) as f:
-        return f.read()
+def read_file(file_location):
+    if urlparse(file_location).scheme != '':
+        return read_url(file_location)
+    return read_local(file_location)
 
 
-def load_url(url):
-    r = requests.get(url)
+def read_url(file_location):
+    r = requests.get(file_location)
     r.raise_for_status()
     return r.text
+
+
+def read_local(file_location):
+    with open(os.path.expanduser(file_location)) as f:
+        return f.read()
 
 
 # https://stackoverflow.com/a/2838309

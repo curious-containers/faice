@@ -38,7 +38,7 @@ def main():
         exit(1)
 
     tool = TOOLS[sys.argv[1]]
-    sys.argv[0] = '{} {}'.format(sys.argv[0], sys.argv[1])
+    sys.argv[0] = 'faice {}'.format(sys.argv[1])
     del sys.argv[1]
     tool()
 

@@ -3,7 +3,7 @@ import yaml
 import jsonschema
 from copy import deepcopy
 
-from faice.resources import load_local, load_url
+from faice.resources import read_local, read_url
 from faice.helpers import print_user_text
 from faice.schemas import src_code_schema
 
@@ -112,9 +112,9 @@ def _load_cwl_files(d):
     results = []
     for file_data in [cwl_file_data, cwl_input_file_data]:
         if file_data.get('url'):
-            text = load_url(file_data['url'])
+            text = read_url(file_data['url'])
         elif file_data.get('path'):
-            text = load_local(file_data['path'])
+            text = read_local(file_data['path'])
         else:
             text = file_data['yaml']
         yaml_data = yaml.load(text)

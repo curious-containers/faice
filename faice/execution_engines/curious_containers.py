@@ -278,6 +278,11 @@ def vagrant(d, output_directory, use_local_data):
         'cp -R config_samples/config .',
         'bash bin/cc-create-systemd-unit-file -d $(pwd)',
         'systemctl enable cc-server',
+        '',
+        'docker pull docker.io/mongo',
+        'docker pull docker.io/docker:dind',
+        'docker build cc-server-image',
+        '',
         'systemctl start cc-server',
         '',
         '# cc-ui',
@@ -306,7 +311,7 @@ def vagrant(d, output_directory, use_local_data):
         'echo',
         'echo setup successful',
         'echo "waiting for Curious Containers to finish initialization..."',
-        'for i in {1..60}; do',
+        'for i in {1..30}; do',
         '    http_code=$(curl -sL -w "%{http_code}" http://localhost:8000/ -o /dev/null)',
         '    if [ "${http_code}" == "200" ]; then',
         '        cat /vagrant/{} | ~/cc-server/bin/cc-create-user-non-interactive '
@@ -320,6 +325,9 @@ def vagrant(d, output_directory, use_local_data):
         '    sleep 10',
         '    echo "still waiting ..."',
         'done',
+        '',
+        'cat /vagrant/{} | ~/cc-server/bin/cc-create-user-non-interactive '
+        '-f ~/cc-server/compose/config/cc-server/config.toml -m localhost'.format(credentials_file_name),
         '',
         'echo "timeout: Curious Containers did not yet finish initialization"',
         ''
@@ -404,15 +412,6 @@ def vagrant(d, output_directory, use_local_data):
         '      - /vagrant/input_files:/root/input_files:ro,z',
         '      - /vagrant/result_files:/root/result_files:rw,z',
         '    tty: true',
-        '',
-        '  registry:',
-        '    image: registry:2',
-        '    ports:',
-        '      - "5000:5000"',
-        '    environment:',
-        '      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data',
-        '    volumes:',
-        '    - /root/.cc_server_compose/registry/data:/data:rw,z',
         ''
     ]
 
@@ -507,7 +506,7 @@ def vagrant(d, output_directory, use_local_data):
         '',
         'STEP {}: Run the experiment from the generated JSON file:'.format(s.step()),
         '',
-        'faice run -f experiment.json',
+        'faice run experiment.json',
         '',
         'OPTIONAL: Access a graphical user interface to monitor the experiment progress via the following address in '
         'a browser:',
