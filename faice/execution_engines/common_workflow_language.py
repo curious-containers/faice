@@ -188,6 +188,12 @@ def vagrant(d, output_directory, use_local_data):
     provision_file_name = 'provision.sh'
     cwl_file_name = 'experiment.cwl'
     cwl_input_file_name = 'experiment-cwl-input.yml'
+    readme_file_name = 'README.txt'
+
+    directories = {
+        'inputs': os.path.join(output_directory, 'inputs'),
+        'outputs': os.path.join(output_directory, 'outputs')
+    }
 
     cwl_yaml, cwl_input_yaml = _load_cwl_files(d)
 
@@ -221,7 +227,7 @@ def vagrant(d, output_directory, use_local_data):
         'echo',
         'echo setup successful',
         'echo',
-        'echo run application...'
+        'echo run application...',
         'echo',
         '',
         'cd /vagrant/outputs',
@@ -229,45 +235,19 @@ def vagrant(d, output_directory, use_local_data):
         ''
     ]
 
-    files = [
-        (vagrant_file_name, vagrant_file_lines),
-        (provision_file_name, provision_file_lines)
-    ]
-
-    for file_name, file_lines in files:
-        file_content = os.linesep.join(file_lines)
-        file_path = os.path.join(output_directory, file_name)
-        with open(file_path, 'w') as f:
-            f.write(file_content)
-
     meta_data = d['meta_data']
-
     cwl_input_yaml_copy = _adapt_for_vagrant(cwl_input_yaml, meta_data)
-    with open(os.path.join(output_directory, cwl_input_file_name), 'w') as f:
-        yaml.dump(cwl_input_yaml_copy, f)
 
-    with open(os.path.join(output_directory, cwl_file_name), 'w') as f:
-        yaml.dump(cwl_yaml, f)
-
-    directories = {
-        'inputs': os.path.join(output_directory, 'inputs'),
-        'outputs': os.path.join(output_directory, 'outputs')
-    }
-
-    for _, directory in directories.items():
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-    user_text = []
+    readme_file_lines = []
 
     if use_local_data:
-        user_text += [
+        readme_file_lines += [
             '',
             'The option --use-local-data has been set. This setting is ignored by the common-workflow-language '
             'execution engine'
         ]
 
-    user_text += [
+    readme_file_lines += [
         '',
         'STEP 1: It is required, that the input files listed below are copied to the appropriate file system locations '
         'before running the experiment:'
@@ -282,12 +262,12 @@ def vagrant(d, output_directory, use_local_data):
             file_path = os.path.join(directories['inputs'], file_name)
             doc = cwl_yaml['inputs'][key].get('doc')
 
-            user_text.append('')
+            readme_file_lines.append('')
             if doc:
-                user_text.append('file doc: {}'.format(doc))
-            user_text.append('file location: {}'.format(file_path))
+                readme_file_lines.append('file doc: {}'.format(doc))
+            readme_file_lines.append('file location: {}'.format(file_path))
 
-    user_text += [
+    readme_file_lines += [
         '',
         'The result files will be written to the {} directory'.format(directories['outputs']),
         '',
@@ -302,4 +282,28 @@ def vagrant(d, output_directory, use_local_data):
         ''
     ]
 
-    print_user_text(user_text)
+    # create files and directories
+    files = [
+        (vagrant_file_name, vagrant_file_lines),
+        (provision_file_name, provision_file_lines),
+        (readme_file_name, readme_file_lines)
+    ]
+
+    for file_name, file_lines in files:
+        file_content = os.linesep.join(file_lines)
+        file_path = os.path.join(output_directory, file_name)
+        with open(file_path, 'w') as f:
+            f.write(file_content)
+
+    with open(os.path.join(output_directory, cwl_input_file_name), 'w') as f:
+        yaml.dump(cwl_input_yaml_copy, f)
+
+    with open(os.path.join(output_directory, cwl_file_name), 'w') as f:
+        yaml.dump(cwl_yaml, f)
+
+    for _, directory in directories.items():
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+    # print readme
+    print_user_text(readme_file_lines)

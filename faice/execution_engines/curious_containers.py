@@ -239,6 +239,13 @@ def vagrant(d, output_directory, use_local_data):
     experiment_file_name = 'experiment.json'
     apache_file_name = 'cc-server.conf'
     credentials_file_name = 'cc-credentials.json'
+    readme_file_name = 'README.txt'
+
+    directories = {
+        'input_files': os.path.join(output_directory, 'input_files'),
+        'result_files': os.path.join(output_directory, 'result_files'),
+        'logs': os.path.join(output_directory, 'curious-containers', 'logs')
+    }
 
     vagrant_file_lines = [
         'VAGRANTFILE_API_VERSION = "2"',
@@ -420,48 +427,15 @@ def vagrant(d, output_directory, use_local_data):
         ''
     ]
 
-    files = [
-        (vagrant_file_name, vagrant_file_lines),
-        (provision_file_name, provision_file_lines),
-        (compose_file_name, compose_file_lines),
-        (apache_file_name, apache_file_lines)
-    ]
-
-    for file_name, file_lines in files:
-        file_content = os.linesep.join(file_lines)
-        file_path = os.path.join(output_directory, file_name)
-        with open(file_path, 'w') as f:
-            f.write(file_content)
-
     c = _adapt_for_vagrant(
         d, port=cc_host_port, username=cc_username, password=cc_password, use_local_data=use_local_data
     )
-    with open(os.path.join(output_directory, experiment_file_name), 'w') as f:
-        json.dump(c, f, indent=4)
-
-    credentials = {
-        'username': cc_username,
-        'password': cc_password,
-        'is_admin': True
-    }
-    with open(os.path.join(output_directory, credentials_file_name), 'w') as f:
-        json.dump(credentials, f, indent=4)
-
-    directories = {
-        'input_files': os.path.join(output_directory, 'input_files'),
-        'result_files': os.path.join(output_directory, 'result_files'),
-        'logs': os.path.join(output_directory, 'curious-containers', 'logs')
-    }
-
-    for _, directory in directories.items():
-        if not os.path.exists(directory):
-            os.makedirs(directory)
 
     s = Stepper()
-    user_text = []
+    readme_file_lines = []
 
     if use_local_data:
-        user_text += [
+        readme_file_lines += [
             '',
             'STEP {}: The option --use-local-data has been set. It is required, that the input files listed below '
             'are copied to the appropriate file system locations before running the experiment:'.format(s.step())
@@ -470,23 +444,23 @@ def vagrant(d, output_directory, use_local_data):
         input_files_meta = c['meta_data']['input_files']
         for i, input_file in enumerate(input_files_meta):
             file_name = '{}.{}'.format(
-                i+1,
+                i + 1,
                 c['meta_data']['input_files'][i]['file_extension_preference']
             )
             file_path = os.path.join(directories['input_files'], file_name)
             doc = input_file['doc']
-            user_text += [
+            readme_file_lines += [
                 '',
                 'file doc: {}'.format(doc),
                 'file location: {}'.format(file_path),
             ]
 
-        user_text += [
+        readme_file_lines += [
             '',
             'The result files will be written to the {} directory'.format(directories['result_files'])
         ]
 
-    user_text += [
+    readme_file_lines += [
         '',
         'STEP {}: Change to the {} directory and run:'.format(s.step(), output_directory),
         '',
@@ -508,4 +482,35 @@ def vagrant(d, output_directory, use_local_data):
         '',
     ]
 
-    print_user_text(user_text)
+    # create files and directories
+    files = [
+        (vagrant_file_name, vagrant_file_lines),
+        (provision_file_name, provision_file_lines),
+        (compose_file_name, compose_file_lines),
+        (apache_file_name, apache_file_lines),
+        (readme_file_name, readme_file_lines)
+    ]
+
+    for file_name, file_lines in files:
+        file_content = os.linesep.join(file_lines)
+        file_path = os.path.join(output_directory, file_name)
+        with open(file_path, 'w') as f:
+            f.write(file_content)
+
+    with open(os.path.join(output_directory, experiment_file_name), 'w') as f:
+        json.dump(c, f, indent=4)
+
+    credentials = {
+        'username': cc_username,
+        'password': cc_password,
+        'is_admin': True
+    }
+    with open(os.path.join(output_directory, credentials_file_name), 'w') as f:
+        json.dump(credentials, f, indent=4)
+
+    for _, directory in directories.items():
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+    # print readme
+    print_user_text(readme_file_lines)
