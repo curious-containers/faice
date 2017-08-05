@@ -26,9 +26,11 @@ _engine_config_schema = {
         'install_requirements': {
             'type': 'object',
             'properties': {
-                'cc_server_version': {'enum': ['0.12']}
+                'cc_server_version': {'enum': ['0.12']},
+                'host_ram': {'type': 'integer'},
+                'host_cpus': {'type': 'integer'}
             },
-            'required': ['cc_server_version'],
+            'required': ['cc_server_version', 'host_ram', 'host_cpus'],
             'additionalProperties': False
         }
     },
@@ -227,8 +229,8 @@ def vagrant(d, output_directory, use_local_data):
     cc_password = 'ccpass'
     cc_host_port = find_open_port()
     cc_guest_port = 80
-    vm_memory = 4096
-    vm_cpus = 2
+    vm_memory = engine_config['install_requirements']['host_ram']
+    vm_cpus = engine_config['install_requirements']['host_cpus']
     vm_box = 'trusty64'
     vm_box_url = 'https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box'
     vm_user = 'ubuntu'

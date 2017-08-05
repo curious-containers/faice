@@ -13,9 +13,11 @@ _engine_config_schema = {
         'install_requirements': {
             'type': 'object',
             'properties': {
-                'cwltool_version': {'type': 'string'}
+                'cwltool_version': {'type': 'string'},
+                'host_ram': {'type': 'integer'},
+                'host_cpus': {'type': 'integer'}
             },
-            'required': ['cwltool_version'],
+            'required': ['cwltool_version', 'host_ram', 'host_cpus'],
             'additionalProperties': False
         }
     },
@@ -178,8 +180,8 @@ def vagrant(d, output_directory, use_local_data):
 
     cwltool_version = engine_config['install_requirements']['cwltool_version']
 
-    vm_memory = 4096
-    vm_cpus = 2
+    vm_memory = engine_config['install_requirements']['host_ram']
+    vm_cpus = engine_config['install_requirements']['host_cpus']
     vm_box = 'trusty64'
     vm_box_url = 'https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box'
     vm_user = 'ubuntu'
