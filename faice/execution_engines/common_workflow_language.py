@@ -175,7 +175,7 @@ def _adapt_for_vagrant(cwl_input_yaml, meta_data):
     return c
 
 
-def vagrant(d, output_directory, use_local_data):
+def vagrant(d, output_directory, remote_data):
     engine_config = d['execution_engine']['engine_config']
 
     cwltool_version = engine_config['install_requirements']['cwltool_version']
@@ -242,11 +242,11 @@ def vagrant(d, output_directory, use_local_data):
 
     readme_file_lines = []
 
-    if use_local_data:
+    if remote_data:
         readme_file_lines += [
             '',
-            'The option --use-local-data has been set. This setting is ignored by the common-workflow-language '
-            'execution engine'
+            'The --remote-data flag has been set, but is not supported with the common-workflow-language execution'
+            'engine and will be ignored.'
         ]
 
     readme_file_lines += [

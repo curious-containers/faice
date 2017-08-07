@@ -25,8 +25,7 @@ def _user_text():
     ]
 
     for key in TOOLS:
-        _, tail = os.path.split(sys.argv[0])
-        result.append('{} {}'.format(tail, key))
+        result.append('faice {}'.format(key))
 
     return result
 

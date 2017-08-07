@@ -34,8 +34,8 @@ def run(d):
 
 
 @_graceful_exception('Could not setup vagrant.')
-def vagrant(d, output_directory, use_local_data):
-    engines.vagrant(d, output_directory, use_local_data)
+def vagrant(d, output_directory, remote_data):
+    engines.vagrant(d, output_directory, remote_data)
 
 
 @_graceful_exception('Could not parse experiment file.')

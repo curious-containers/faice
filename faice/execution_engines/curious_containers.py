@@ -169,7 +169,7 @@ def run(d):
     pprint(data)
 
 
-def _adapt_for_vagrant(d, port, username, password, use_local_data):
+def _adapt_for_vagrant(d, port, username, password, remote_data):
     c = deepcopy(d)
 
     c['execution_engine']['engine_config']['url'] = 'http://localhost:{}/cc'.format(port)
@@ -178,7 +178,7 @@ def _adapt_for_vagrant(d, port, username, password, use_local_data):
         'password': password
     }
 
-    if use_local_data:
+    if not remote_data:
         if c['instructions'].get('tasks'):
             tasks = c['instructions']['tasks']
         else:
@@ -219,7 +219,7 @@ def _adapt_for_vagrant(d, port, username, password, use_local_data):
     return c
 
 
-def vagrant(d, output_directory, use_local_data):
+def vagrant(d, output_directory, remote_data):
     engine_config = d['execution_engine']['engine_config']
 
     cc_server_version = engine_config['install_requirements']['cc_server_version']
@@ -430,16 +430,16 @@ def vagrant(d, output_directory, use_local_data):
     ]
 
     c = _adapt_for_vagrant(
-        d, port=cc_host_port, username=cc_username, password=cc_password, use_local_data=use_local_data
+        d, port=cc_host_port, username=cc_username, password=cc_password, remote_data=remote_data
     )
 
     s = Stepper()
     readme_file_lines = []
 
-    if use_local_data:
+    if not remote_data:
         readme_file_lines += [
             '',
-            'STEP {}: The option --use-local-data has been set. It is required, that the input files listed below '
+            'STEP {}: The --remote-data flag has not been set. It is required, that the input files listed below '
             'are copied to the appropriate file system locations before running the experiment:'.format(s.step())
         ]
 
