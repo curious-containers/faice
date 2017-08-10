@@ -108,7 +108,11 @@ def validate_instructions(d):
     try:
         url = engine_config['url'].rstrip('/')
         auth = (engine_config['auth']['username'], engine_config['auth']['password'])
-        r = requests.get('{}/tasks/schema'.format(url), auth=auth)
+        r = requests.get(
+            '{}/tasks/schema'.format(url),
+            auth=auth,
+            timeout=(5, 30)
+        )
         r.raise_for_status()
         instructions_schema = r.json()
     except:
@@ -161,7 +165,12 @@ def run(d):
     if 'auth' in engine_config:
         auth = (engine_config['auth']['username'], engine_config['auth']['password'])
 
-    r = requests.post('{}/tasks'.format(url), auth=auth, json=instructions)
+    r = requests.post(
+        '{}/tasks'.format(url),
+        auth=auth,
+        json=instructions,
+        timeout=(5, 30)
+    )
     r.raise_for_status()
     data = r.json()
 
