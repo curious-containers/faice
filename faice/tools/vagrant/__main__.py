@@ -17,10 +17,16 @@ def main():
         '-o', '--output-directory', dest='output_directory', metavar='DIR', default=os.getcwd(),
         help='Choose alternative output DIR for generated configuration files.'
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         '-r', '--remote-data', dest='remote_data', action='store_true',
-        help='Use remote data repositories for input file downloads and result file uploads '
-        'instead of using local file system paths.'
+        help='Use remote data repositories for input file downloads and result file uploads instead of using local '
+             'file system paths.'
+    )
+    group.add_argument(
+        '-i', '--remote-input-data', dest='remote_input_data', action='store_true',
+        help='Use remote data repositories for input file downloads, but use local file system paths to store result '
+             'files.'
     )
     parser.add_argument(
         '-n', '--non-interactive', dest='non_interactive', action='store_true',
@@ -45,7 +51,12 @@ def main():
         ], error=True)
         exit(1)
 
-    vagrant(d, output_directory=output_directory, remote_data=args.remote_data)
+    vagrant(
+        d,
+        output_directory=output_directory,
+        remote_input_data=args.remote_input_data or args.remote_data,
+        remote_result_data=args.remote_data
+    )
 
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ _engine_config_schema = {
             'additionalProperties': False
         }
     },
-    'required': ['url', 'auth', 'install_requirements'],
+    'required': ['install_requirements'],
     'additionalProperties': False
 }
 
@@ -104,10 +104,10 @@ def validate_engine_config(d):
 def validate_instructions(d):
     engine_config = d['execution_engine']['engine_config']
     instructions = d['instructions']
-    url = engine_config['url'].rstrip('/')
-    auth = (engine_config['auth']['username'], engine_config['auth']['password'])
     instructions_schema = None
     try:
+        url = engine_config['url'].rstrip('/')
+        auth = (engine_config['auth']['username'], engine_config['auth']['password'])
         r = requests.get('{}/tasks/schema'.format(url), auth=auth)
         r.raise_for_status()
         instructions_schema = r.json()
@@ -152,8 +152,15 @@ def validate_meta_data(d):
 def run(d):
     engine_config = d['execution_engine']['engine_config']
     instructions = d['instructions']
+
+    if 'url' not in engine_config:
+        raise Exception('The engine_config does not provide a url to a Curious Containers server.')
     url = engine_config['url'].rstrip('/')
-    auth = (engine_config['auth']['username'], engine_config['auth']['password'])
+
+    auth = None
+    if 'auth' in engine_config:
+        auth = (engine_config['auth']['username'], engine_config['auth']['password'])
+
     r = requests.post('{}/tasks'.format(url), auth=auth, json=instructions)
     r.raise_for_status()
     data = r.json()
@@ -169,7 +176,7 @@ def run(d):
     pprint(data)
 
 
-def _adapt_for_vagrant(d, port, username, password, remote_data):
+def _adapt_for_vagrant(d, port, username, password, remote_input_data, remote_result_data):
     c = deepcopy(d)
 
     c['execution_engine']['engine_config']['url'] = 'http://localhost:{}/cc'.format(port)
@@ -178,11 +185,12 @@ def _adapt_for_vagrant(d, port, username, password, remote_data):
         'password': password
     }
 
-    if not remote_data:
+    if not remote_input_data:
         if c['instructions'].get('tasks'):
             tasks = c['instructions']['tasks']
         else:
             tasks = [c['instructions']]
+
         for task in tasks:
             for i, input_file in enumerate(task['input_files']):
                 input_file['connector_type'] = 'http'
@@ -194,6 +202,7 @@ def _adapt_for_vagrant(d, port, username, password, remote_data):
                     'method': 'GET'
                 }
 
+    if not remote_result_data:
         if c['instructions'].get('tasks'):
             tasks = c['instructions']['tasks']
         else:
@@ -219,7 +228,7 @@ def _adapt_for_vagrant(d, port, username, password, remote_data):
     return c
 
 
-def vagrant(d, output_directory, remote_data):
+def vagrant(d, output_directory, remote_input_data, remote_result_data):
     engine_config = d['execution_engine']['engine_config']
 
     cc_server_version = engine_config['install_requirements']['cc_server_version']
@@ -430,17 +439,22 @@ def vagrant(d, output_directory, remote_data):
     ]
 
     c = _adapt_for_vagrant(
-        d, port=cc_host_port, username=cc_username, password=cc_password, remote_data=remote_data
+        d,
+        port=cc_host_port,
+        username=cc_username,
+        password=cc_password,
+        remote_input_data=remote_input_data,
+        remote_result_data=remote_result_data
     )
 
     s = Stepper()
     readme_file_lines = []
 
-    if not remote_data:
+    if not remote_input_data:
         readme_file_lines += [
             '',
-            'STEP {}: The --remote-data flag has not been set. It is required, that the input files listed below '
-            'are copied to the appropriate file system locations before running the experiment:'.format(s.step())
+            'STEP {}: It is required, that the input files listed below are copied to the appropriate file system '
+            'locations before running the experiment:'.format(s.step())
         ]
 
         input_files_meta = c['meta_data']['input_files']
@@ -457,11 +471,6 @@ def vagrant(d, output_directory, remote_data):
                 'file location: {}'.format(file_path),
             ]
 
-        readme_file_lines += [
-            '',
-            'The result files will be written to the {} directory'.format(directories['result_files'])
-        ]
-
     readme_file_lines += [
         '',
         'STEP {}: Change to the {} directory and run:'.format(s.step(), output_directory),
@@ -473,7 +482,16 @@ def vagrant(d, output_directory, remote_data):
         '',
         'STEP {}: Run the experiment from the generated JSON file:'.format(s.step()),
         '',
-        'faice run experiment.json',
+        'faice run experiment.json'
+    ]
+
+    if not remote_result_data:
+        readme_file_lines += [
+            '',
+            'Result files will be stored in the {} directory.'.format(directories['result_files'])
+        ]
+
+    readme_file_lines += [
         '',
         'OPTIONAL: Access a graphical user interface to monitor the experiment progress via the following address in '
         'a browser:',

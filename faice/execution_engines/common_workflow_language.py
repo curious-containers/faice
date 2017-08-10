@@ -175,7 +175,7 @@ def _adapt_for_vagrant(cwl_input_yaml, meta_data):
     return c
 
 
-def vagrant(d, output_directory, remote_data):
+def vagrant(d, output_directory, remote_input_data, remote_result_data):
     engine_config = d['execution_engine']['engine_config']
 
     cwltool_version = engine_config['install_requirements']['cwltool_version']
@@ -240,16 +240,22 @@ def vagrant(d, output_directory, remote_data):
     meta_data = d['meta_data']
     cwl_input_yaml_copy = _adapt_for_vagrant(cwl_input_yaml, meta_data)
 
-    readme_file_lines = []
-
-    if remote_data:
-        readme_file_lines += [
+    if remote_result_data:
+        user_text = [
             '',
-            'The --remote-data flag has been set, but is not supported with the common-workflow-language execution'
-            'engine and will be ignored.'
+            'The --remote-data flag has been set, but is not supported with the common-workflow-language '
+            'execution-engine and will be ignored.'
         ]
+        print_user_text(user_text, error=True)
+    elif remote_input_data:
+        user_text = [
+            '',
+            'The --remote-input-data flag has been set, but is not supported with the common-workflow-language '
+            'execution-engine and will be ignored.'
+        ]
+        print_user_text(user_text, error=True)
 
-    readme_file_lines += [
+    readme_file_lines = [
         '',
         'STEP 1: It is required, that the input files listed below are copied to the appropriate file system locations '
         'before running the experiment:'
@@ -271,8 +277,6 @@ def vagrant(d, output_directory, remote_data):
 
     readme_file_lines += [
         '',
-        'The result files will be written to the {} directory'.format(directories['outputs']),
-        '',
         'STEP 2: Change to the {} directory and run:'.format(output_directory),
         '',
         'vagrant up --provider virtualbox',
@@ -281,6 +285,8 @@ def vagrant(d, output_directory, remote_data):
         'VirtualBox are required beforehand.',
         '',
         'The experiment will run automatically during the vagrant virtual machine provisioning.',
+        '',
+        'Result files will be stored in the {} directory.'.format(directories['outputs']),
         ''
     ]
 

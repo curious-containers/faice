@@ -17,6 +17,11 @@ def run(d):
     engine.run(d)
 
 
-def vagrant(d, output_directory, use_local_data):
+def vagrant(d, output_directory, remote_input_data, remote_result_data):
     engine = get_engine(d)
-    engine.vagrant(d, output_directory, use_local_data)
+    engine.vagrant(
+        d,
+        output_directory=output_directory,
+        remote_input_data=remote_input_data,
+        remote_result_data=remote_result_data
+    )
