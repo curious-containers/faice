@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='faice',
-    version='1.1',
+    version='1.2',
     summary='FAICE (Fair Collaboration and Experiments) is a tool suite, helping researchers to work with experiments '
             'published in the FAICE description format.',
     description='FAICE (Fair Collaboration and Experiments) is a tool suite, helping researchers to work with '
