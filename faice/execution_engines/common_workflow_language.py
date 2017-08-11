@@ -182,7 +182,7 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
 
     vm_memory = engine_config['install_requirements']['host_ram']
     vm_cpus = engine_config['install_requirements']['host_cpus']
-    vm_box = 'trusty64'
+    vm_box = 'xenial64'
     vm_box_url = 'https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box'
     vm_user = 'ubuntu'
 
