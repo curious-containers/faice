@@ -1,11 +1,16 @@
 import os
 import sys
+import textwrap
 from collections import OrderedDict
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from faice.tools.run.__main__ import main as run_main
+from faice.tools.run.__main__ import DESCRIPTION as run_description
 from faice.tools.vagrant.__main__ import main as vagrant_main
-from faice.helpers import print_user_text
+from faice.tools.vagrant.__main__ import DESCRIPTION as vagrant_description
 
+
+VERSION = '1.2'
 
 TOOLS = OrderedDict([
     ('run', run_main),
@@ -13,33 +18,37 @@ TOOLS = OrderedDict([
 ])
 
 
-def _user_text():
-    result = [
+def main():
+    description = [
         'FAICE  Copyright (C) 2017  Christoph Jansen',
         '',
         'This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it'
         'under certain conditions. See the LICENSE file distributed with this software for details.',
-        '',
-        'usage:',
-        '',
     ]
+    parser = ArgumentParser(
+        description=os.linesep.join([textwrap.fill(block) for block in description]),
+        formatter_class=RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        '-v', '--version', action='version', version=VERSION
+    )
+    subparsers = parser.add_subparsers(title="tools")
 
-    for key in TOOLS:
-        result.append('faice {}'.format(key))
+    sub_parser = subparsers.add_parser('run', help=run_description, add_help=False)
+    _ = subparsers.add_parser('vagrant', help=vagrant_description, add_help=False)
 
-    return result
+    if len(sys.argv) < 2:
+        parser.print_help()
+        exit()
 
+    _ = parser.parse_known_args()
+    sub_args = sub_parser.parse_known_args()
 
-def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in TOOLS:
-        user_text = _user_text()
-        print_user_text(user_text)
-        exit(1)
-
-    tool = TOOLS[sys.argv[1]]
+    tool = TOOLS[sub_args[1][0]]
     sys.argv[0] = 'faice {}'.format(sys.argv[1])
     del sys.argv[1]
-    tool()
+    exit(tool())
+
 
 if __name__ == '__main__':
     main()

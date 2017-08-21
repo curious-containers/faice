@@ -5,33 +5,36 @@ from faice.helpers import print_user_text
 from faice.tools.cli_funcs import read_file, validate, parse, vagrant
 
 
+DESCRIPTION = 'generate configuration files to set up an execution engine in a Vagrant virtual machine'
+
+
 def main():
     parser = ArgumentParser(
-        description='Generate configuration files to set up an execution engine in a Vagrant virtual machine.'
+        description=DESCRIPTION
     )
     parser.add_argument(
         'experiment_file', nargs=1,
-        help='Read experiment FILE from a url or a file system path.'
+        help='read experiment FILE from a url or a file system path'
     )
     parser.add_argument(
         '-o', '--output-directory', dest='output_directory', metavar='DIR', default=os.getcwd(),
-        help='Choose alternative output DIR for generated configuration files.'
+        help='choose alternative output DIR for generated configuration files'
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         '-r', '--remote-data', dest='remote_data', action='store_true',
-        help='Use remote data repositories for input file downloads and result file uploads instead of using local '
-             'file system paths.'
+        help='use remote data repositories for input file downloads and result file uploads instead of using local '
+             'file system paths'
     )
     group.add_argument(
         '-i', '--remote-input-data', dest='remote_input_data', action='store_true',
-        help='Use remote data repositories for input file downloads, but use local file system paths to store result '
-             'files.'
+        help='use remote data repositories for input file downloads, but use local file system paths to store result '
+             'files'
     )
     parser.add_argument(
         '-n', '--non-interactive', dest='non_interactive', action='store_true',
-        help='Do not provide an interactive cli prompt to set undeclared variables and instead load a JSON '
-             'document containing all values via stdin.'
+        help='do not provide an interactive cli prompt to set undeclared variables and instead load a JSON '
+             'document containing all values via stdin'
     )
 
     args = parser.parse_args()
