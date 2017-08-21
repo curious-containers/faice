@@ -104,29 +104,64 @@ def validate_engine_config(d):
 def validate_instructions(d):
     engine_config = d['execution_engine']['engine_config']
     instructions = d['instructions']
-    instructions_schema = None
+    timeout = (5, 30)
+
+    if instructions.get('tasks'):
+        raise Exception(
+            'Specifying multiple tasks in instructions is not supported with FAICE.'
+        )
+
     try:
         url = engine_config['url'].rstrip('/')
         auth = (engine_config['auth']['username'], engine_config['auth']['password'])
-        r = requests.get('{}/tasks/schema'.format(url), auth=auth)
+    except:
+        print_user_text([
+            '',
+            'Instructions could not be validated, because url or auth have not been specified for execution engine.'
+        ], error=True)
+        return
+
+    try:
+        r = requests.get(
+            '{}/'.format(url),
+            auth=auth,
+            timeout=timeout
+        )
+        r.raise_for_status()
+        data = r.json()
+        cc_server_version = data['version']
+    except:
+        print_user_text([
+            '',
+            'Instructions could not be validated, because version could not be requested from cc-server.'
+        ], error=True)
+        return
+
+    if cc_server_version != engine_config['install_requirements']['cc_server_version']:
+        print_user_text([
+            '',
+            'Instructions could not be validated, because requested cc-server version does not match '
+            'cc_version_version specified in install_requirements.'
+        ], error=True)
+        return
+
+    try:
+        r = requests.get(
+            '{}/tasks/schema'.format(url),
+            auth=auth,
+            timeout=(5, 30)
+        )
         r.raise_for_status()
         instructions_schema = r.json()
     except:
-        pass
-
-    if instructions_schema:
-        jsonschema.validate(instructions, instructions_schema)
-    else:
         print_user_text([
             '',
             'Instructions could not be validated, because the corrisponding schema file could not be requested '
             'from cc-server.'
         ], error=True)
+        return
 
-    if instructions.get('tasks'):
-        raise Exception(
-            'Using multiple Curious Containers tasks in instructions is not supported with FAICE.'
-        )
+    jsonschema.validate(instructions, instructions_schema)
 
 
 def validate_meta_data(d):
@@ -161,7 +196,12 @@ def run(d):
     if 'auth' in engine_config:
         auth = (engine_config['auth']['username'], engine_config['auth']['password'])
 
-    r = requests.post('{}/tasks'.format(url), auth=auth, json=instructions)
+    r = requests.post(
+        '{}/tasks'.format(url),
+        auth=auth,
+        json=instructions,
+        timeout=(5, 30)
+    )
     r.raise_for_status()
     data = r.json()
 
