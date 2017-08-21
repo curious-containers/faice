@@ -5,9 +5,9 @@ from collections import OrderedDict
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from faice.tools.run.__main__ import main as run_main
-from faice.tools.run.__main__ import DESCRIPTION as run_description
+from faice.tools.run.__main__ import DESCRIPTION as RUN_DESCRIPTION
 from faice.tools.vagrant.__main__ import main as vagrant_main
-from faice.tools.vagrant.__main__ import DESCRIPTION as vagrant_description
+from faice.tools.vagrant.__main__ import DESCRIPTION as VAGRANT_DESCRIPTION
 
 
 VERSION = '1.2'
@@ -34,8 +34,8 @@ def main():
     )
     subparsers = parser.add_subparsers(title="tools")
 
-    sub_parser = subparsers.add_parser('run', help=run_description, add_help=False)
-    _ = subparsers.add_parser('vagrant', help=vagrant_description, add_help=False)
+    sub_parser = subparsers.add_parser('run', help=RUN_DESCRIPTION, add_help=False)
+    _ = subparsers.add_parser('vagrant', help=VAGRANT_DESCRIPTION, add_help=False)
 
     if len(sys.argv) < 2:
         parser.print_help()
