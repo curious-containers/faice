@@ -1,11 +1,14 @@
 import os
-import yaml
 import jsonschema
+from ruamel.yaml import YAML
 from copy import deepcopy
 
 from faice.resources import read_local, read_url
 from faice.helpers import print_user_text
 from faice.schemas import src_code_schema
+
+
+yaml = YAML(typ='safe')
 
 _engine_config_schema = {
     'type': 'object',
