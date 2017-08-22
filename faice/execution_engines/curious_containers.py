@@ -255,7 +255,7 @@ def _adapt_for_vagrant(d, port, username, password, remote_input_data, remote_re
                     'local_result_file': local_result_file,
                     'connector_type': 'http',
                     'connector_access': {
-                        'url': 'http://172.18.0.1:6000/{}.{}'.format(
+                        'url': 'http://172.17.0.1:8003/{}.{}'.format(
                             local_result_file,
                             c['meta_data']['result_files'][local_result_file]['file_extension_preference']
                         ),
@@ -340,7 +340,7 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         'apt-get update',
         'apt-get install -y curl git docker.io apache2 nodejs mongodb-org-server mongodb-org-shell python3-pip '
         'python3-toml python3-jsonschema python3-zmq python3-requests python3-pymongo python3-docker python3-flask '
-        'python3-gunicorn python3-cryptography python3-gevent',
+        'python3-gunicorn python3-cryptography python3-gevent python3-chardet',
         'systemctl enable mongod',
         'systemctl start mongod',
         '',
@@ -395,8 +395,8 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
 
     cc_file_lines = [
         '[server_web]',
-        'external_url = "http://172.18.0.1:8000/"',
-        'bind_host = "127.0.0.1"',
+        'external_url = "http://172.17.0.1:8000/"',
+        'bind_host = "0.0.0.0"',
         'bind_port = 8000',
         '',
         '[server_master]',
@@ -413,8 +413,8 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         'suppress_stdout = true',
         '',
         '[server_files]',
-        'external_url = "http://172.18.0.1:8003"',
-        'bind_host = "127.0.0.1"',
+        'external_url = "http://172.17.0.1:8003"',
+        'bind_host = "0.0.0.0"',
         'bind_port = 8003',
         'input_files_dir = "/vagrant/input_files"',
         'result_files_dir = "/vagrant/result_files"',
