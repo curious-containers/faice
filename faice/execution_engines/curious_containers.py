@@ -117,7 +117,7 @@ def validate_instructions(d):
     except:
         print_user_text([
             '',
-            'Instructions could not be validated, because url or auth have not been specified for execution engine.'
+            'Instructions could not be validated, because url or auth has not been specified for execution engine.'
         ], error=True)
         return
 
@@ -272,30 +272,30 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
     engine_config = d['execution_engine']['engine_config']
 
     cc_server_version = engine_config['install_requirements']['cc_server_version']
-    docker_compose_version = '1.14.0'
 
     cc_username = 'ccuser'
     cc_password = 'ccpass'
     cc_host_port = find_open_port()
-    cc_guest_port = 80
+    mongo_db = 'ccdb'
+    mongo_username = 'ccdbAdmin'
+    mongo_password = 'PASSWORD'
     vm_memory = engine_config['install_requirements']['host_ram']
     vm_cpus = engine_config['install_requirements']['host_cpus']
     vm_box = 'xenial64'
     vm_box_url = 'https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box'
-    vm_user = 'ubuntu'
 
     vagrant_file_name = 'Vagrantfile'
     provision_file_name = 'provision.sh'
-    compose_file_name = 'docker-compose.yml'
     experiment_file_name = 'experiment.json'
     apache_file_name = 'cc-server.conf'
+    cc_file_name = 'config.toml'
     credentials_file_name = 'cc-credentials.json'
     readme_file_name = 'README.txt'
 
     directories = {
         'input_files': os.path.join(output_directory, 'input_files'),
         'result_files': os.path.join(output_directory, 'result_files'),
-        'logs': os.path.join(output_directory, 'curious-containers', 'logs')
+        'logs': os.path.join(output_directory, 'logs')
     }
 
     vagrant_file_lines = [
@@ -304,7 +304,7 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         'Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|',
         '    config.vm.box = "{}"'.format(vm_box),
         '    config.vm.box_url = "{}"'.format(vm_box_url),
-        '    config.vm.network :forwarded_port, guest: {}, host: {}'.format(cc_guest_port, cc_host_port),
+        '    config.vm.network :forwarded_port, guest: 80, host: {}'.format(cc_host_port),
         '',
         '    config.vm.provider "virtualbox" do |v|',
         '        v.memory = {}'.format(vm_memory),
@@ -316,36 +316,48 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         ''
     ]
 
+    data = {
+        'user': mongo_username,
+        'pwd': mongo_password,
+        'roles': [{
+            'role': 'readWrite',
+            'db': mongo_db
+        }]
+    }
+
     provision_file_lines = [
         '#!/usr/bin/env bash',
         '',
-        'apt-get update',
-        'apt-get install -y curl git docker.io apache2 python3-pip',
+        '# mongo repository',
+        'apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927',
+        'echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse" > '
+        '/etc/apt/sources.list.d/mongodb-org-3.2.list',
         '',
-        '# docker and docker-compose',
-        'usermod -aG docker {}'.format(vm_user),
-        'curl -L https://github.com/docker/compose/releases/download/{}/docker-compose-$(uname -s)-$(uname -m) '
-        '> /usr/local/bin/docker-compose'.format(docker_compose_version),
-        'chmod +x /usr/local/bin/docker-compose',
+        '# node repository',
+        'curl -sL https://deb.nodesource.com/setup_6.x | bash -',
+        '',
+        '# install dependencies',
+        'apt-get update',
+        'apt-get install -y curl git docker.io apache2 nodejs mongodb-org-server mongodb-org-shell python3-pip '
+        'python3-toml python3-jsonschema python3-zmq python3-requests python3-pymongo python3-docker python3-flask '
+        'python3-gunicorn python3-cryptography python3-gevent',
+        'systemctl enable mongod',
+        'systemctl start mongod',
         '',
         '# cc-server',
-        'cd ~',
+        'cd',
+        'mkdir -p .config/cc-server',
+        'cp /vagrant/{} .config/cc-server'.format(cc_file_name),
         'git clone -b {} --depth 1 https://github.com/curious-containers/cc-server.git'.format(cc_server_version),
-        'cd cc-server/compose',
-        'cp /vagrant/{} .'.format(compose_file_name),
-        'cp -R config_samples/config .',
-        'bash bin/cc-create-systemd-unit-file -d $(pwd)',
+        'cd cc-server',
+        'pip3 install --user .',
+        'mongo --eval \'database = db.getSiblingDB("{}"); database.createUser({})\''.format(mongo_db, json.dumps(data)),
+        'bash bin/cc-create-systemd-unit-file -u root',
         'systemctl enable cc-server',
-        '',
-        'docker-compose pull',
-        'docker-compose build',
-        '',
         'systemctl start cc-server',
         '',
         '# cc-ui',
         'cd',
-        'curl -sL https://deb.nodesource.com/setup_6.x | bash -',
-        'apt-get install -y nodejs',
         'git clone --depth 1 https://github.com/curious-containers/cc-ui.git',
         'cd cc-ui',
         'touch src/config.js',
@@ -364,9 +376,7 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         '',
         '# user account for cc-server',
         'cd ~/cc-server',
-        'pip3 install --user --upgrade -r requirements.txt',
-        'cat /vagrant/{} | ~/cc-server/bin/cc-create-user-non-interactive '
-        '-f ~/cc-server/compose/config/cc-server/config.toml -m localhost'.format(credentials_file_name),
+        'cat /vagrant/{} | ~/cc-server/bin/cc-create-user-non-interactive'.format(credentials_file_name),
         '',
         '# check web server',
         'http_code=$(curl -sL -w "%{http_code}" http://localhost:8000/ -o /dev/null)',
@@ -383,84 +393,69 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         ''
     ]
 
-    compose_file_lines = [
-        'version: "2"',
-        'services:',
-        '  cc-server-web:',
-        '    build: ./cc-server-image',
-        '    command: "python3 -u -m cc_server.web_service"',
-        '    ports:',
-        '      - "8000:8000"',
-        '    volumes:',
-        '      - ./config/cc-server:/root/.config/cc-server:ro,z',
-        '      - ../cc_server:/opt/cc_server:ro,z',
-        '    links:',
-        '      - mongo',
-        '      - cc-server-master',
-        '      - cc-server-log',
-        '    tty: true',
+    cc_file_lines = [
+        '[server_web]',
+        'external_url = "http://172.18.0.1:8000/"',
+        'bind_host = "127.0.0.1"',
+        'bind_port = 8000',
         '',
-        '  cc-server-master:',
-        '    build: ./cc-server-image',
-        '    command: "python3 -u -m cc_server.master_service"',
-        '    volumes:',
-        '      - ./config/cc-server:/root/.config/cc-server:ro,z',
-        '      - ../cc_server:/opt/cc_server:ro,z',
-        '    links:',
-        '      - mongo',
-        '      - dind',
-        '      - cc-server-log',
-        '    depends_on:',
-        '      - mongo-seed',
-        '    tty: true',
+        '[server_master]',
+        'external_url = "tcp://localhost:8001"',
+        'bind_host = "127.0.0.1"',
+        'bind_port = 8001',
+        'scheduling_interval_seconds = 60',
         '',
-        '  cc-server-log:',
-        '    build: ./cc-server-image',
-        '    command: "python3 -u -m cc_server.log_service"',
-        '    volumes:',
-        '      - ./config/cc-server:/root/.config/cc-server:ro,z',
-        '      - ../cc_server:/opt/cc_server:ro,z',
-        '      - /vagrant/curious-containers/logs:/root/.cc_server/logs:rw,z',
-        '    tty: true',
+        '[server_log]',
+        'external_url = "tcp://localhost:8002"',
+        'bind_host = "127.0.0.1"',
+        'bind_port = 8002',
+        'log_dir = "/vagrant/logs"',
+        'suppress_stdout = true',
         '',
-        '  mongo:',
-        '    image: mongo',
-        '    ports:',
-        '      - "27017:27017"',
-        '    volumes:',
-        '      - /root/.cc_server_compose/mongo/db:/data/db',
-        '    tty: true',
+        '[server_files]',
+        'external_url = "http://172.18.0.1:8003"',
+        'bind_host = "127.0.0.1"',
+        'bind_port = 8003',
+        'input_files_dir = "/vagrant/input_files"',
+        'result_files_dir = "/vagrant/result_files"',
         '',
-        '  mongo-seed:',
-        '    build: ./mongo-seed',
-        '    volumes:',
-        '      - ./config/cc-server:/root/.config/cc-server:ro,z',
-        '      - ./mongo-seed/mongo_seed:/opt/mongo_seed:ro,z',
-        '    command: "python3 -u -m mongo_seed"',
-        '    links:',
-        '      - mongo',
-        '    tty: true',
+        '[mongo]',
+        'username = "{}"'.format(mongo_username),
+        'password = "{}"'.format(mongo_password),
+        'host = "localhost"',
+        'port = 27017',
+        'db = "{}"'.format(mongo_db),
         '',
-        '  dind:',
-        '    image: docker:dind',
-        '    privileged: true',
-        '    command: "dockerd --insecure-registry=registry:5000 -H tcp://0.0.0.0:2375"',
-        '    volumes:',
-        '      - /root/.cc_server_compose/dind/docker:/var/lib/docker:rw,z',
-        '    links:',
-        '      - file-server',
-        '    tty: true',
+        '[docker]',
+        'thread_limit = 8',
+        'api_timeout = 30',
         '',
-        '  file-server:',
-        '    build: ./cc-server-image',
-        '    command: "/root/.local/bin/gunicorn -w 1 -b 0.0.0.0:6000 file_server.__main__:app"',
-        '    ports:',
-        '      - "6000:6000"',
-        '    volumes:',
-        '      - ./file_server:/opt/file_server:ro,z',
-        '      - /vagrant/input_files:/root/input_files:ro,z',
-        '      - /vagrant/result_files:/root/result_files:rw,z',
-        '    tty: true',
+        '[docker.nodes.local]',
+        'base_url = "unix://var/run/docker.sock"',
+        '',
+        '[defaults.application_container_description]',
+        'entry_point = "python3 -m cc_container_worker.application_container"',
+        '',
+        '[defaults.data_container_description]',
+        'image = "docker.io/curiouscontainers/cc-image-fedora:{}"'.format(cc_server_version),
+        'entry_point = "python3 -m cc_container_worker.data_container"',
+        'container_ram = 512',
+        '',
+        '[defaults.inspection_container_description]',
+        'image = "docker.io/curiouscontainers/cc-image-fedora:{}"'.format(cc_server_version),
+        'entry_point = "python3 -m cc_container_worker.inspection_container"',
+        '',
+        '[defaults.scheduling_strategies]',
+        'container_allocation = "spread"',
+        '',
+        '[defaults.error_handling]',
+        'max_task_trials = 3',
+        'dead_node_invalidation = false',
+        '',
+        '[defaults.authorization]',
+        'num_login_attempts = 3',
+        'block_for_seconds = 120',
+        'tokens_valid_for_seconds = 172800',
         ''
     ]
 
@@ -546,7 +541,7 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
     files = [
         (vagrant_file_name, vagrant_file_lines),
         (provision_file_name, provision_file_lines),
-        (compose_file_name, compose_file_lines),
+        (cc_file_name, cc_file_lines),
         (apache_file_name, apache_file_lines),
         (readme_file_name, readme_file_lines)
     ]
