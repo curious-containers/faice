@@ -235,7 +235,7 @@ def _adapt_for_vagrant(d, port, username, password, remote_input_data, remote_re
             for i, input_file in enumerate(task['input_files']):
                 input_file['connector_type'] = 'http'
                 input_file['connector_access'] = {
-                    'url': 'http://172.18.0.1:6000/{}.{}'.format(
+                    'url': 'http://172.17.0.1:8003/{}.{}'.format(
                         i+1,
                         c['meta_data']['input_files'][i]['file_extension_preference']
                     ),
@@ -338,7 +338,7 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         '',
         '# install dependencies',
         'apt-get update',
-        'apt-get install -y curl git docker.io apache2 nodejs mongodb-org-server mongodb-org-shell python3-pip '
+        'apt-get install -y curl git docker.io apache2 nodejs mongodb-org-server mongodb-org-shell '
         'python3-toml python3-jsonschema python3-zmq python3-requests python3-pymongo python3-docker python3-flask '
         'python3-gunicorn python3-cryptography python3-gevent python3-chardet',
         'systemctl enable mongod',
@@ -350,9 +350,8 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         'cp /vagrant/{} .config/cc-server'.format(cc_file_name),
         'git clone -b {} --depth 1 https://github.com/curious-containers/cc-server.git'.format(cc_server_version),
         'cd cc-server',
-        'pip3 install --user .',
         'mongo --eval \'database = db.getSiblingDB("{}"); database.createUser({})\''.format(mongo_db, json.dumps(data)),
-        'bash bin/cc-create-systemd-unit-file -u root',
+        'bash bin/cc-create-systemd-unit-file -d $(pwd)',
         'systemctl enable cc-server',
         'systemctl start cc-server',
         '',
