@@ -276,6 +276,7 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
     cc_username = 'ccuser'
     cc_password = 'ccpass'
     cc_host_port = find_open_port()
+    cc_ui_url = 'https://github.com/curious-containers/cc-ui/releases/download/0.12/release.tar.gz'
     mongo_db = 'ccdb'
     mongo_username = 'ccdbAdmin'
     mongo_password = 'PASSWORD'
@@ -333,12 +334,9 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         'echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse" > '
         '/etc/apt/sources.list.d/mongodb-org-3.2.list',
         '',
-        '# node repository',
-        'curl -sL https://deb.nodesource.com/setup_6.x | bash -',
-        '',
         '# install dependencies',
         'apt-get update',
-        'apt-get install -y curl git docker.io apache2 nodejs mongodb-org-server mongodb-org-shell '
+        'apt-get install -y curl tar git docker.io apache2 mongodb-org-server mongodb-org-shell '
         'python3-toml python3-jsonschema python3-zmq python3-requests python3-pymongo python3-docker python3-flask '
         'python3-gunicorn python3-cryptography python3-gevent python3-chardet',
         'systemctl enable mongod',
@@ -357,12 +355,7 @@ def vagrant(d, output_directory, remote_input_data, remote_result_data):
         '',
         '# cc-ui',
         'cd',
-        'git clone --depth 1 https://github.com/curious-containers/cc-ui.git',
-        'cd cc-ui',
-        'touch src/config.js',
-        'npm install',
-        'npm update',
-        'npm run build',
+        'curl -sL {} | tar -xvz'.format(cc_ui_url),
         'mv build /opt/cc-ui',
         'chown -R www-data:www-data /opt/cc-ui',
         '',
